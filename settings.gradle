@@ -1,0 +1,3 @@
+include ':miCore' // 在settings.gradle中设置好miCore的项目引用情况  
+  
+project(':miCore').projectDir = new File(settingsDir, '../miCore')
