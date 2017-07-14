@@ -5,7 +5,7 @@ import cc.mi.login.system.SystemManager;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-public class GateClientHandler extends SimpleChannelInboundHandler<Coder> {
+public class LoginClientHandler extends SimpleChannelInboundHandler<Coder> {
 	
 	public void channelActive(final ChannelHandlerContext ctx) {
 		System.out.println("connect to center success");

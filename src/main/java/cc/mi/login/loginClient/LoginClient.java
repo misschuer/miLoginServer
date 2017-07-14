@@ -13,7 +13,7 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
-public class GateClient {
+public class LoginClient {
 	public static void start(String ip, int port) {
         final EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         try {
@@ -26,12 +26,12 @@ public class GateClient {
 	            @Override
 	            protected void initChannel(SocketChannel ch) throws Exception {
 	            	ch.pipeline().addLast("frameDecoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, -4, 4));
-					ch.pipeline().addLast("decoder", new GateClientDecoder());
+					ch.pipeline().addLast("decoder", new LoginClientDecoder());
 					
-					ch.pipeline().addLast("clientHandler", new GateClientHandler());
+					ch.pipeline().addLast("clientHandler", new LoginClientHandler());
 					
 					ch.pipeline().addLast("frameEncoder", new LengthFieldPrepender(4, true));
-					ch.pipeline().addLast("encoder", new GateClientEncoder());
+					ch.pipeline().addLast("encoder", new LoginClientEncoder());
 	            }
 	        });
 	        ChannelFuture future = bootstrap.connect(ip, port).sync();
