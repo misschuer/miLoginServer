@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import cc.mi.core.coder.Coder;
 import cc.mi.core.constance.IdentityConst;
 import cc.mi.core.generate.msg.ServerRegIdentity;
 import cc.mi.core.generate.msg.ServerRegOpcode;
@@ -41,11 +40,6 @@ public class SystemManager {
 	// 提交客户端过来的任务
 	public static void submitTask(Task task) {
 		executor.submit(task);
-	}
-	
-	public static void sendToClient(Coder coder) {
-		coder.setInternalDestFD(-1);
-		centerChannel.writeAndFlush(coder);
 	}
 	
 	public static void regToCenter() {
