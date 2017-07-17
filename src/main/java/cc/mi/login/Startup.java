@@ -7,7 +7,8 @@ import org.ini4j.Config;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 
-import cc.mi.login.loginClient.LoginClient;
+import cc.mi.core.serverClient.ServerClient;
+import cc.mi.login.loginClient.LoginClientHandler;
 
 public class Startup {
 	private static final String LOGIN_CLIENT = "loginClient";
@@ -24,7 +25,7 @@ public class Startup {
         	ini.load(url);
 
         	Section section = ini.get(LOGIN_CLIENT);
-        	LoginClient.start(section.get(IP), Integer.parseInt(section.get(PORT)));
+        	ServerClient.start(section.get(IP), Integer.parseInt(section.get(PORT)), new LoginClientHandler());
         	
         } catch (IOException e) {
         	e.printStackTrace();

@@ -1,10 +1,16 @@
 package cc.mi.login.system;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import cc.mi.core.coder.Coder;
-import cc.mi.core.task.Task;
+import cc.mi.core.constance.IdentityConst;
+import cc.mi.core.generate.msg.ServerRegIdentity;
+import cc.mi.core.generate.msg.ServerRegOpcode;
+import cc.mi.core.task.SendToCenterTask;
+import cc.mi.core.task.base.Task;
 import io.netty.channel.Channel;
 
 public class SystemManager {
@@ -13,8 +19,13 @@ public class SystemManager {
 	
 	private static Channel centerChannel = null;
 		
+	private static final List<Integer> opcodes;
+	
 	static {
 		executor = Executors.newSingleThreadExecutor();
+		opcodes = Arrays.asList(
+				
+		);
 	}
 	
 	public static Channel getCenterChannel() {
@@ -33,6 +44,19 @@ public class SystemManager {
 	}
 	
 	public static void sendToClient(Coder coder) {
+		coder.setInternalDestFD(-1);
 		centerChannel.writeAndFlush(coder);
+	}
+	
+	public static void regToCenter() {
+		ServerRegIdentity identity = new ServerRegIdentity();
+		identity.setInternalDestFD(IdentityConst.IDENDITY_CENTER);
+		identity.setIdentity(IdentityConst.IDENDITY_LOGIN);
+		submitTask(new SendToCenterTask(centerChannel, identity));
+		
+		ServerRegOpcode reg = new ServerRegOpcode();
+		reg.setInternalDestFD(IdentityConst.IDENDITY_CENTER);
+		reg.setOpcodes(opcodes);
+		submitTask(new SendToCenterTask(centerChannel, reg));
 	}
 }
