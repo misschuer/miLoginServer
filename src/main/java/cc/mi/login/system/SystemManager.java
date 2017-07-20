@@ -1,15 +1,22 @@
 package cc.mi.login.system;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.commons.math3.util.Pair;
+
 import cc.mi.core.constance.IdentityConst;
+import cc.mi.core.generate.Opcodes;
 import cc.mi.core.generate.msg.ServerRegIdentity;
 import cc.mi.core.generate.msg.ServerRegOpcode;
+import cc.mi.core.handler.Handler;
 import cc.mi.core.task.SendToCenterTask;
 import cc.mi.core.task.base.Task;
+import cc.mi.login.handler.GetSessionHandler;
 import io.netty.channel.Channel;
 
 public class SystemManager {
@@ -17,14 +24,24 @@ public class SystemManager {
 	private static final ExecutorService executor;
 	
 	private static Channel centerChannel = null;
+	
+	// 句柄
+	public static final Handler[] handlers = new Handler[1<<12];
 		
 	private static final List<Integer> opcodes;
+	
+	private static final Map<Integer, Pair<String, Short>> hostInfo = new HashMap<>();
+	
+	public static final Map<String, String> ip2Sessionkey = new HashMap<>();
 	
 	static {
 		executor = Executors.newSingleThreadExecutor();
 		opcodes = Arrays.asList(
-				
+			Opcodes.MSG_GETSESSION,
+			Opcodes.MSG_CREATECONNECTION
 		);
+		
+		handlers[Opcodes.MSG_GETSESSION] = new GetSessionHandler();
 	}
 	
 	public static Channel getCenterChannel() {
@@ -52,5 +69,21 @@ public class SystemManager {
 		reg.setInternalDestFD(IdentityConst.IDENDITY_CENTER);
 		reg.setOpcodes(opcodes);
 		submitTask(new SendToCenterTask(centerChannel, reg));
+	}
+
+	public static void putHostInfo(int fd, String ip, short port) {
+		hostInfo.put(fd, new Pair<>(ip, port));
+	}
+
+	public static void removeHostInfo(int fd) {
+		hostInfo.remove(fd);
+	}
+	
+	public static String getHostInfoKey(int fd) {
+		return hostInfo.get(fd).getKey();
+	}
+	
+	public static short getHostInfoValue(int fd) {
+		return hostInfo.get(fd).getValue();
 	}
 }

@@ -2,6 +2,7 @@ package cc.mi.login.loginClient;
 
 import cc.mi.core.coder.Coder;
 import cc.mi.login.system.SystemManager;
+import cc.mi.login.task.DealLoginDataTask;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
@@ -19,7 +20,7 @@ public class LoginClientHandler extends SimpleChannelInboundHandler<Coder> {
 	
 	@Override
 	public void channelRead0(final ChannelHandlerContext ctx, final Coder coder) throws Exception {
-		
+		SystemManager.submitTask(new DealLoginDataTask(ctx.channel(), coder));
 	}
 	
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
