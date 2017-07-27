@@ -16,6 +16,7 @@ import cc.mi.core.generate.msg.ServerRegOpcode;
 import cc.mi.core.handler.Handler;
 import cc.mi.core.task.SendToCenterTask;
 import cc.mi.core.task.base.Task;
+import cc.mi.login.handler.CreateCharHandler;
 import cc.mi.login.handler.GetSessionHandler;
 import io.netty.channel.Channel;
 
@@ -42,6 +43,7 @@ public class SystemManager {
 		);
 		
 		handlers[Opcodes.MSG_GETSESSION] = new GetSessionHandler();
+		handlers[Opcodes.MSG_CREATECHAR] = new CreateCharHandler();
 	}
 	
 	public static Channel getCenterChannel() {

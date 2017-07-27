@@ -1,4 +1,4 @@
-package cc.mi.login.loginClient;
+package cc.mi.login.net;
 
 import cc.mi.core.coder.Coder;
 import cc.mi.login.system.SystemManager;
@@ -6,7 +6,7 @@ import cc.mi.login.task.DealLoginDataTask;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-public class LoginClientHandler extends SimpleChannelInboundHandler<Coder> {
+public class LoginHandler extends SimpleChannelInboundHandler<Coder> {
 	
 	public void channelActive(final ChannelHandlerContext ctx) {
 		System.out.println("connect to center success");

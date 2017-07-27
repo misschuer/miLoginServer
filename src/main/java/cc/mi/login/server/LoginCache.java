@@ -11,6 +11,8 @@ public enum LoginCache {
 	
 	private Map<String, Account> accountHash = new HashMap<>();
 	private Map<String, CharInfo> charInfoHash = new HashMap<>();
+	private Map<String, String> charNameHash = new HashMap<>();
+	
 	private LoginCache() {}
 	
 	public void addAccountAndSave(Account accountTable) {
@@ -33,14 +35,9 @@ public enum LoginCache {
 //		m_storage->AddContent("char_name.txt", guid + ' ' + name + '\n');
 //	}
 //
-//	const string &LogindCache::FindGuidByCharName(const string &name)
-//	{
-//		auto it = m_charNameMaps.find(name);
-//		if(it != m_charNameMaps.end())
-//			return it->second;
-//		static string null_res = "";
-//		return null_res;
-//	}
+	public String findGuidByCharName(String name) {
+		return charNameHash.get(name);
+	}
 //
 //	//读取所有的角色名
 //	void LogindCache::LoadAllCharName()

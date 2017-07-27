@@ -1,14 +1,14 @@
 package cc.mi.login;
 
-import cc.mi.core.serverClient.ServerClient;
+import cc.mi.core.net.ClientCore;
 import cc.mi.login.config.ServerConfig;
-import cc.mi.login.loginClient.LoginClientHandler;
+import cc.mi.login.net.LoginHandler;
 
 public class Startup {
 
 	private static void start() throws NumberFormatException, Exception {
 		ServerConfig.loadConfig();
-		ServerClient.start(ServerConfig.getIp(), ServerConfig.getPort(), new LoginClientHandler());
+		ClientCore.start(ServerConfig.getIp(), ServerConfig.getPort(), new LoginHandler());
 	}
 
 	public static void main(String[] args) throws NumberFormatException, Exception {

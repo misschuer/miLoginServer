@@ -7,12 +7,10 @@ import org.ini4j.Config;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 
-import cc.mi.login.Startup;
+import cc.mi.core.constance.NetConst;
 
 public class ServerConfig {
 	private static final String LOGIN_CLIENT = "loginClient";
-	private static final String IP = "ip";
-	private static final String PORT = "port";
 	private static final String LOGIN_KEY = "loginKey";
 	private static final String CHECK_SESSIONKEY_TIME = "checkSessionKeyTime";
 	
@@ -25,7 +23,7 @@ public class ServerConfig {
 	
 	public static void loadConfig() throws NumberFormatException, Exception {
 		Config cfg = new Config();
-		URL url = Startup.class.getResource("/config.ini");
+		URL url = ServerConfig.class.getResource("/config.ini");
 		Ini ini = new Ini();
         ini.setConfig(cfg);
         try {
@@ -34,8 +32,8 @@ public class ServerConfig {
 
         	Section section = ini.get(LOGIN_CLIENT);
         	loginKey = section.get(LOGIN_KEY);
-        	ip = section.get(IP);
-        	port = Integer.parseInt(section.get(PORT));
+        	ip = section.get(NetConst.IP);
+        	port = Integer.parseInt(section.get(NetConst.PORT));
         	checkSessionKeyTime = "TRUE".equals(section.get(CHECK_SESSIONKEY_TIME));
         	
         } catch (IOException e) {

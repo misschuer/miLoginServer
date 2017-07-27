@@ -129,5 +129,28 @@ public enum LoginDB {
 			callback.invoke(info);
 		}
 	}
-	
+
+	public String getServerNameFromCharName(String name) {
+		
+		String serverName = "";
+		
+		//倒数第一个,号的后面存储着玩家真正的名称
+		int pos = name.indexOf(',');
+		if (pos == -1) {
+			return "";
+		}
+		
+		//第一个逗号分割着pid
+		serverName += name.substring(0, pos);	
+		serverName += '_';
+
+		//第二个逗号存着sid
+		int pos2 = name.indexOf(',', pos+1);//跳过,
+		if(pos2 == -1) {
+			return "";
+		}
+		
+		serverName += name.substring(pos+1, pos2-pos-1);
+		return serverName;
+	}
 }

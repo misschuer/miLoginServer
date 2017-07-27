@@ -1,6 +1,10 @@
 package cc.mi.login.server;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
 
 import cc.mi.core.callback.Callback;
 import cc.mi.core.coder.Coder;
@@ -13,7 +17,9 @@ import cc.mi.login.system.SystemManager;
 import cc.mi.login.table.Account;
 
 public class LoginContext extends ServerContext {
-	private String account = "";
+	private static final Logger logger = Logger.getLogger(LoginContext.class);
+	private String account;
+	private String fromServerName;
 	private LoginPlayer player;
 	private boolean isFCM = false;
 	private boolean hasPlatdata;			//登录sessionkey中是否携带平台信息
@@ -34,7 +40,7 @@ public class LoginContext extends ServerContext {
 	/*获取sessionKey对象*/
 	public boolean getSession(final Map<String, String> querys) {
 		 //如果已经登录过了
-	    if (!account.isEmpty() || player != null) {
+	    if (account != null && !account.isEmpty() || player != null) {
 //	    	tea_perror("account[%s] re get session", m_account.c_str());	
 	    	return false;
 	    }
@@ -64,6 +70,8 @@ public class LoginContext extends ServerContext {
 
 		//TODO: 帐户名称，并且判断一下是否超长
 		this.account = String.format("%s_%s_%s", pid, sid, uid);
+		
+		this.fromServerName = pid + "_" + sid;
 
 //		tea_pdebug("account %s getsession!", this.account);
 		//状态变成验证通过	
@@ -88,7 +96,7 @@ public class LoginContext extends ServerContext {
 			LoginContext oldContext = (LoginContext) ContextManager.getContext(oldFd);
 			if(oldContext != null) {
 				oldContext.close(SystemManager.getCenterChannel(), OperateConst.OPERATE_CLOSE_REASON_OTHER_LOGINED, "", true);
-				this.account = "";
+				this.account = null;
 			}
 			
 			return true;
@@ -99,21 +107,10 @@ public class LoginContext extends ServerContext {
 		LoginDB.INSTANCE.getCharList(account, new Callback<CharInfo>() {
 			@Override
 			public void invoke(CharInfo obj) {
-//				auto *session = LogindContext::FindContext(fd);
-//				if(!session) return;
-//				string faction_name;
-//				string queen_name;
-//				uint8 icon = 0;
-//				// 如果是被邀请的需要显示当前帮派信息
-//				if (chars.size() == 0 && !invited.empty()) {
-//					// 查询帮派信息
-//					BinLogObject *factionInfo = (BinLogObject*)ObjMgr.Get(invited);
-//					if (factionInfo) {
-//						faction_name = factionInfo->GetStr(BINLOG_STRING_FIELD_NAME);
-//						queen_name = factionInfo->GetStr(FACTION_STRING_FIELD_MANGER_NAME);
-//						icon = factionInfo->GetByte(FACTION_INT_FIELD_FLAGS_ID, 0);
-//					}
-//				}
+				List<CharInfo> chars = new ArrayList<>();
+				if (obj != null) {
+					chars.add(obj);
+				}
 //				Call_chars_list(session->m_delegate_sendpkt, chars, faction_name.c_str(), queen_name.c_str(), icon);
 			}
 		});
@@ -197,6 +194,95 @@ public class LoginContext extends ServerContext {
 //		LogindApp::g_app->SendToScened(spkt, scened_conn);
 		return true;
 	}
+	
+	/*检查名称*/
+	public String checkNameAndGetRealName(String name) {
+		//账号信息
+		Account accountInfo = LoginCache.INSTANCE.getAccount(this.getAccount());
+		////在创建角色的用户名中加入平台ID,服务器ID并且
+		String charName = name;
+		//没加区服之前的校验
+		short checkReslut = checkName1(charName);
+		if(checkReslut != OperateConst.OPERATE_LOGIN_REASON_SUCCESS) {
+			this.callOperationResult(
+					SystemManager.getCenterChannel(), 
+					OperateConst.OPERATE_TYPE_LOGIN, 
+					checkReslut, 
+					""
+			);
+			return null;
+		}
+		////按照规则拼结用户名
+		charName = accountInfo.getPid();
+		charName += ',';
+		charName += accountInfo.getSid();
+		charName += ',';
+		charName += name;
+		//加了区服以后的校验
+		checkReslut = checkName2(charName);
+		if(checkReslut == OperateConst.OPERATE_LOGIN_REASON_DB_RESULT_ERROR) {
+			//数据库异常无法创建
+			return null;
+		}
+		if(checkReslut != OperateConst.OPERATE_LOGIN_REASON_SUCCESS) {
+			this.callOperationResult(
+					SystemManager.getCenterChannel(), 
+					OperateConst.OPERATE_TYPE_LOGIN, 
+					checkReslut, 
+					""
+			);
+			return null;
+		}
+		return charName;
+	}
+	
+	private short checkName1(String name) {
+//TODO:		屏蔽字
+//		if (Pingbi((char*)name.c_str()))
+//		{
+//			tea_pdebug("error: has pingbi !!!");
+//			return OPRATE_RESULT_NAME_HAS_PINGBI;
+//		}
+
+		if ("".equals(name)) {
+			logger.info("error: name is null !!!");
+			return OperateConst.OPERATE_LOGIN_REASON_NAME_ILLEGAL;
+		}
+
+//TODO: 不可创建字
+//		auto& vec = g_Config.g_cant_make_name;
+//		for (auto it = vec.begin(); it != vec.end(); ++it)
+//		{
+//			if(name.find(*it) != string::npos)
+//			{
+//				return OperateConst.OPERATE_LOGIN_REASON_NAME_ILLEGAL;
+//			}
+//		}
+		return OperateConst.OPERATE_LOGIN_REASON_SUCCESS;
+	}
+
+	private short checkName2(String name) {
+		
+		if (name.length() >= 50) {
+			logger.info("error:name is too long!!!");
+			return OperateConst.OPERATE_LOGIN_REASON_NAME_TOO_LONG;
+		}
+
+		String guid = LoginCache.INSTANCE.findGuidByCharName(name);
+		if (guid == null) {
+			logger.info(String.format("g_DAL.FindGuidByName(name, has_err); %s ", name));
+			return OperateConst.OPERATE_LOGIN_REASON_DB_RESULT_ERROR;
+		}
+
+		if (!guid.isEmpty()) {
+			logger.info(String.format("error: name repeat : %s", name));
+			return OperateConst.OPERATE_LOGIN_REASON_NAME_REPEAT;		
+		}
+
+		return OperateConst.OPERATE_LOGIN_REASON_SUCCESS;
+	}
+	
+	
 
 	public String getAccount() {
 		return account;
@@ -252,5 +338,13 @@ public class LoginContext extends ServerContext {
 
 	public void setGeneralId(String generalId) {
 		this.generalId = generalId;
+	}
+
+	public String getFromServerName() {
+		return fromServerName;
+	}
+
+	public void setFromServerName(String fromServerName) {
+		this.fromServerName = fromServerName;
 	}
 }
