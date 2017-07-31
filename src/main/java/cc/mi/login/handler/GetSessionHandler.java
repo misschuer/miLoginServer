@@ -14,7 +14,7 @@ import cc.mi.core.server.ServerContext;
 import cc.mi.core.server.SessionStatus;
 import cc.mi.login.config.ServerConfig;
 import cc.mi.login.server.LoginContext;
-import cc.mi.login.system.SystemManager;
+import cc.mi.login.system.LoginSystemManager;
 import io.netty.channel.Channel;
 
 public class GetSessionHandler extends AbstractHandler {
@@ -31,7 +31,7 @@ public class GetSessionHandler extends AbstractHandler {
 		if (!parseSessionKey(querys, sessionKey)) {
 			//这个还是蛮正常的，因为会出现一台机器多个平台的情况，平台密钥不会相同，所以tea_pdebug就好
 			//tea_pdebug("LogindApp::on_create_conn_get_session ParseSessionKey failed");
-			ContextManager.closeSession(SystemManager.getCenterChannel(), fd);
+			ContextManager.closeSession(LoginSystemManager.getCenterChannel(), fd);
 			return;
 		}
 		 
@@ -43,7 +43,7 @@ public class GetSessionHandler extends AbstractHandler {
 		//验证一下session_key的时效性
 		if (!checkSessionKeyTimeout(fd, sessionKey, Integer.parseInt(querys.get("time")), gaptime)) {
 			//tea_pwarn("LogindApp::on_create_conn_get_session CheckSessionKeyTimeout failed");
-			ContextManager.closeSession(SystemManager.getCenterChannel(), fd);
+			ContextManager.closeSession(LoginSystemManager.getCenterChannel(), fd);
 			return;
 		}
 	
@@ -59,19 +59,19 @@ public class GetSessionHandler extends AbstractHandler {
 			loginContext = new LoginContext(fd);
 			String remoteIp = querys.get("remote_ip");
 			if (remoteIp == null || "".equals(remoteIp)) {
-				loginContext.setRemoteIp(SystemManager.getHostInfoKey(fd));
+				loginContext.setRemoteIp(LoginSystemManager.getHostInfoKey(fd));
 			} else {
 				loginContext.setRemoteIp(remoteIp);
 			}
-			loginContext.setRemotePort(SystemManager.getHostInfoValue(fd));
+			loginContext.setRemotePort(LoginSystemManager.getHostInfoValue(fd));
 			ContextManager.pushContext(loginContext);
 		}	
 	
 		//要么成功,要么失败
 		if(loginContext.getSession(querys)) {
-			SystemManager.ip2Sessionkey.put(loginContext.getRemoteIp(), sessionKey);
+			LoginSystemManager.ip2Sessionkey.put(loginContext.getRemoteIp(), sessionKey);
 		} else {
-			loginContext.close(SystemManager.getCenterChannel(), (short) 0, "");
+			loginContext.close(LoginSystemManager.getCenterChannel(), (short) 0, "");
 		}
 	}
 	
@@ -173,14 +173,14 @@ public class GetSessionHandler extends AbstractHandler {
 		}
 
 		//本连接的IP
-		String thisIp = SystemManager.getHostInfoKey(fd);
+		String thisIp = LoginSystemManager.getHostInfoKey(fd);
 		if (thisIp == null || thisIp.isEmpty()) {
 //			tea_pwarn("CheckSessionKeyTimeout this_ip is empty!");		
 			return false;
 		}
 
 		//如果上次的IP跟本次没有变化则不过期
-		if (sessionKey.equals(SystemManager.ip2Sessionkey.get(thisIp))) {
+		if (sessionKey.equals(LoginSystemManager.ip2Sessionkey.get(thisIp))) {
 			return true;
 		}
 		

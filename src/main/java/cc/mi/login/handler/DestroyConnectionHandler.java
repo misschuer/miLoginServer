@@ -6,7 +6,7 @@ import cc.mi.core.handler.AbstractHandler;
 import cc.mi.core.server.ContextManager;
 import cc.mi.core.server.ServerContext;
 import cc.mi.login.server.LoginContext;
-import cc.mi.login.system.SystemManager;
+import cc.mi.login.system.LoginSystemManager;
 import io.netty.channel.Channel;
 
 public class DestroyConnectionHandler extends AbstractHandler {
@@ -26,7 +26,7 @@ public class DestroyConnectionHandler extends AbstractHandler {
 		} else {
 			System.out.printf("on_netgd_destory_conn but not found! fd:%u\n", dc.getFd());
 		}
-		SystemManager.removeHostInfo(dc.getFd());
+		LoginSystemManager.removeHostInfo(dc.getFd());
 	}
 
 }

@@ -4,7 +4,7 @@ import cc.mi.core.coder.Coder;
 import cc.mi.core.handler.Handler;
 import cc.mi.core.server.ContextManager;
 import cc.mi.core.task.base.AbstractCoderTask;
-import cc.mi.login.system.SystemManager;
+import cc.mi.login.system.LoginSystemManager;
 import io.netty.channel.Channel;
 
 public class DealLoginDataTask extends AbstractCoderTask {
@@ -16,7 +16,7 @@ public class DealLoginDataTask extends AbstractCoderTask {
 	
 	@Override
 	protected void doTask() {
-		Handler handler = SystemManager.handlers[coder.getOpcode()];
+		Handler handler = LoginSystemManager.handlers[coder.getOpcode()];
 		handler.handle(ContextManager.getContext(coder.getId()), this.channel, coder);
 	}
 

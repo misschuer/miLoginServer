@@ -18,9 +18,10 @@ import cc.mi.core.task.SendToCenterTask;
 import cc.mi.core.task.base.Task;
 import cc.mi.login.handler.CreateCharHandler;
 import cc.mi.login.handler.GetSessionHandler;
+import cc.mi.login.loginAction.LoginQueueManager;
 import io.netty.channel.Channel;
 
-public class SystemManager {
+public class LoginSystemManager {
 	// 单线程逻辑
 	private static final ExecutorService executor;
 	
@@ -34,6 +35,9 @@ public class SystemManager {
 	private static final Map<Integer, Pair<String, Short>> hostInfo = new HashMap<>();
 	
 	public static final Map<String, String> ip2Sessionkey = new HashMap<>();
+	
+	//登录队列
+	public static final LoginQueueManager loginQueue = new LoginQueueManager();
 	
 	static {
 		executor = Executors.newSingleThreadExecutor();

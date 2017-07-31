@@ -18,6 +18,9 @@ public enum LoginCache {
 	public void addAccountAndSave(Account accountTable) {
 		accountHash.put(accountTable.getName(), accountTable);
 		//TODO : save
+//		string str = info->ToString();
+//		m_storage->Goto(g_Config.player_data_hdd_path);
+//		m_storage->AddContent("account.txt", str + "\n");
 	}
 
 	public Account getAccount(final String account) {
@@ -28,13 +31,11 @@ public enum LoginCache {
 		return charInfoHash.get(account);
 	}
 
-//	void LogindCache::AddCharName(const string &guid, const string &name)
-//	{
-//		m_charNameMaps[name] = guid;
+	public void addCharName(String guid, String name) {
+		this.charNameHash.put(name, guid);
 //		m_storage->Goto(g_Config.player_data_hdd_path);
 //		m_storage->AddContent("char_name.txt", guid + ' ' + name + '\n');
-//	}
-//
+	}
 	public String findGuidByCharName(String name) {
 		return charNameHash.get(name);
 	}
@@ -62,6 +63,13 @@ public enum LoginCache {
 		info.setGuid(guid);
 		addAccountToChar(account, info);
 	}
+	
+	//保存账号角色信息到硬盘中
+	public void saveAccountCharInfo(String account, String guid) {
+//		m_storage->Goto(g_Config.player_data_hdd_path);
+//		m_storage->AddContent("account_char.txt", account + ' ' + guid + '\n');
+	}
+	
 //
 //	//保存合服标志文件
 //	void LogindCache::SaveFileToMergeServer(const string& file_name, const string& now_time)
@@ -501,11 +509,6 @@ public enum LoginCache {
 //		//}
 //	}
 //
-//	//保存账号角色信息到硬盘中
-	public void saveAccountCharInfo(String account, String guid) {
-//		m_storage->Goto(g_Config.player_data_hdd_path);
-//		m_storage->AddContent("account_char.txt", account + ' ' + guid + '\n');
-	}
 //
 //	//回档指定玩家
 //	bool LogindCache::HuidangPlayerInfos(const string player_guid, const string backupfilename)

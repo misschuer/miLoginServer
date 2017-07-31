@@ -1,23 +1,30 @@
 package cc.mi.login.server;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 
 import org.apache.log4j.Logger;
 
-import cc.mi.core.callback.Callback;
+import cc.mi.core.callback.AbstractCallback;
 import cc.mi.core.coder.Coder;
+import cc.mi.core.constance.LoginActionEnum;
 import cc.mi.core.constance.OperateConst;
 import cc.mi.core.server.ContextManager;
 import cc.mi.core.server.ServerContext;
 import cc.mi.core.server.SessionStatus;
 import cc.mi.login.module.CharInfo;
-import cc.mi.login.system.SystemManager;
+import cc.mi.login.system.LoginSystemManager;
 import cc.mi.login.table.Account;
 
 public class LoginContext extends ServerContext {
 	private static final Logger logger = Logger.getLogger(LoginContext.class);
+	private static final int MAX_PLAYER_COUNT = 2000;
+	private static final Queue<Integer> sessionQueue = new LinkedList<>();
+	
 	private String account;
 	private String fromServerName;
 	private LoginPlayer player;
@@ -34,7 +41,7 @@ public class LoginContext extends ServerContext {
 	
 	@Override
 	protected void send(Coder coder) {
-		SystemManager.getCenterChannel().writeAndFlush(coder);
+		LoginSystemManager.getCenterChannel().writeAndFlush(coder);
 	}
 
 	/*获取sessionKey对象*/
@@ -86,7 +93,7 @@ public class LoginContext extends ServerContext {
 		
 			//通知角色已经登录
 			this.callOperationResult(
-					SystemManager.getCenterChannel(), 
+					LoginSystemManager.getCenterChannel(), 
 					OperateConst.OPERATE_TYPE_LOGIN, 
 					OperateConst.OPERATE_LOGIN_REASON_LOGINED_IN, 
 					""
@@ -95,7 +102,7 @@ public class LoginContext extends ServerContext {
 			//通知已经登录的客户端
 			LoginContext oldContext = (LoginContext) ContextManager.getContext(oldFd);
 			if(oldContext != null) {
-				oldContext.close(SystemManager.getCenterChannel(), OperateConst.OPERATE_CLOSE_REASON_OTHER_LOGINED, "", true);
+				oldContext.close(LoginSystemManager.getCenterChannel(), OperateConst.OPERATE_CLOSE_REASON_OTHER_LOGINED, "", true);
 				this.account = null;
 			}
 			
@@ -104,7 +111,7 @@ public class LoginContext extends ServerContext {
 
 		final int fd = this.getFd();
 		LoginDB.INSTANCE.modifyAccount(account, pid, sid, uid, isFCM, this.getRemoteIp(), platData, 0);
-		LoginDB.INSTANCE.getCharList(account, new Callback<CharInfo>() {
+		LoginDB.INSTANCE.getCharList(account, new AbstractCallback<CharInfo>() {
 			@Override
 			public void invoke(CharInfo obj) {
 				List<CharInfo> chars = new ArrayList<>();
@@ -205,7 +212,7 @@ public class LoginContext extends ServerContext {
 		short checkReslut = checkName1(charName);
 		if(checkReslut != OperateConst.OPERATE_LOGIN_REASON_SUCCESS) {
 			this.callOperationResult(
-					SystemManager.getCenterChannel(), 
+					LoginSystemManager.getCenterChannel(), 
 					OperateConst.OPERATE_TYPE_LOGIN, 
 					checkReslut, 
 					""
@@ -226,7 +233,7 @@ public class LoginContext extends ServerContext {
 		}
 		if(checkReslut != OperateConst.OPERATE_LOGIN_REASON_SUCCESS) {
 			this.callOperationResult(
-					SystemManager.getCenterChannel(), 
+					LoginSystemManager.getCenterChannel(), 
 					OperateConst.OPERATE_TYPE_LOGIN, 
 					checkReslut, 
 					""
@@ -282,6 +289,120 @@ public class LoginContext extends ServerContext {
 		return OperateConst.OPERATE_LOGIN_REASON_SUCCESS;
 	}
 	
+	
+	public static void pushSession(int fd) {
+		sessionQueue.add(fd);
+	}
+	
+	public static int getLoginPlayerCount() {
+		int cnt = ContextManager.getLoginPlayers(new AbstractCallback<ServerContext>() {
+			@Override
+			public boolean isMatched(ServerContext obj) {
+				if (obj.getStatus() == SessionStatus.STATUS_TRANSFER || obj.getStatus() == SessionStatus.STATUS_LOGGEDIN) {
+					return true;
+				}
+				return false;
+			}
+		});
+		return cnt;
+	}
+	
+	public static void dealLoginQueue() {
+		if (!LoginContext.sessionQueue.isEmpty()) {
+			int loginCount = LoginContext.getLoginPlayerCount();
+			int passCount = MAX_PLAYER_COUNT - loginCount;
+			logger.debug(String.format("dealLoginQueue max %u , now %u, pass %u, queue %u", 
+					MAX_PLAYER_COUNT, loginCount, passCount, sessionQueue.size()));
+			
+			// 先计算能正常登录的
+			while (passCount > 0 && !sessionQueue.isEmpty()) {
+				int fd = sessionQueue.poll();
+				ServerContext context = ContextManager.getContext(fd);
+				if (context == null) {
+					continue;
+				}
+				
+				if (context.getGuid().isEmpty()) {
+					logger.debug(String.format("dealLoginQueue, guid empty, account %s", ((LoginContext)context).getAccount()));
+					context.close(LoginSystemManager.getCenterChannel(), OperateConst.OPERATE_CLOSE_REASON_LOGDIN_ONE18, "");
+					continue;
+				}
+				
+				if (context.getStatus() == SessionStatus.STATUS_TRANSFER || 
+					context.getStatus() == SessionStatus.STATUS_LOGGEDIN) {
+					logger.debug(String.format("dealLoginQueue ,but status err, %s", context.getGuid()));
+					continue;
+				}
+				LoginSystemManager.loginQueue.pushAction(context.getGuid(), context.getFd(), LoginActionEnum.CONTEXT_LOGIN_ACTION_LOGIN);
+				passCount --;
+			}
+			
+			Iterator<Integer> iter = sessionQueue.iterator();
+			// 需要等待的
+			for (int index = 0; iter.hasNext(); index ++) {
+				int fd = iter.next();
+				ServerContext context = ContextManager.getContext(fd);
+				if (context == null) {
+					iter.remove();
+					index --;
+					continue;
+				}
+				System.out.println(index);
+//TODO:				Call_login_queue_index(context->m_delegate_sendpkt, index);
+			}
+		}
+	}
+	
+	
+	public void playerLoadData() {
+//		SetStatus(STATUS_TRANSFER);
+//		logind_player *player;
+//		//先从硬盘load，没有再从数据库load
+//		if(ObjMgr.LoadPlayer(m_lguid, &player, m_temp_vec)
+//			|| g_Cache.LoadPlayer(m_lguid, &player, m_temp_vec))
+//		{
+//			ASSERT(player);
+//			g_Cache.DelLogoutPlayer(m_lguid);
+//			SetStatus(STATUS_TRANSFER2);
+//			return;
+//		}
+//		else
+//		{
+//			safe_delete(player);
+//			for(auto it:m_temp_vec)
+//				safe_delete(it);
+//			m_temp_vec.clear();
+//		}
+//
+//		uint32 fd = fd_;
+//		string guid = m_lguid;
+//		static map<uint32, vector<GuidObject*>> obj_vec_map;
+//		ASSERT(obj_vec_map.find(fd_) == obj_vec_map.end());
+//
+//		g_DAL.LoadPlayer(m_account, m_lguid, obj_vec_map[fd_], [this, fd, guid](bool load_succeed, vector<GuidObject*> &vec){
+//			auto session = LogindContext::FindContext(fd);
+//			if(!session)
+//			{
+//				for (auto it:vec)
+//				{
+//					safe_delete(it);
+//				}
+//				vec.clear();
+//				return;
+//			}
+//			if(!load_succeed)
+//			{
+//				session->Close(PLAYER_CLOSE_OPERTE_LOGDIN_ONE59, "");
+//				return;
+//			}
+//
+//			for (auto it:vec)
+//			{
+//				session->m_temp_vec.push_back(it);
+//			}
+//			SetStatus(STATUS_TRANSFER2);
+//		});
+	}
 	
 
 	public String getAccount() {
