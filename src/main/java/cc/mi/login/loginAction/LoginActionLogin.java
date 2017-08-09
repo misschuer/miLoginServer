@@ -34,12 +34,12 @@ public class LoginActionLogin extends LoginActionBase {
 		} else if (context.getStatus() == SessionStatus.STATUS_TRANSFER) {
 			return true; //已经在load数据了,等着吧
 		} else if (context.getStatus() == SessionStatus.STATUS_TRANSFER2) {
-//			context->PutData();
+			context.putData();
 			return true;
 		} else if (context.getStatus() == SessionStatus.STATUS_PUT) {
 			return true;
 		} else if (context.getStatus() == SessionStatus.STATUS_PUT_OK) {
-//			context->LoginOK();
+			context.loginOK();
 			return false;
 		}
 		
