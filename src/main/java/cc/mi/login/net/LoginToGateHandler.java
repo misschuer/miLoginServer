@@ -1,8 +1,7 @@
 package cc.mi.login.net;
 
-import cc.mi.core.coder.Packet;
 import cc.mi.core.handler.ChannelHandlerGenerator;
-import cc.mi.core.log.CustomLogger;
+import cc.mi.core.packet.Packet;
 import cc.mi.login.server.LoginServerManager;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -14,19 +13,17 @@ import io.netty.channel.SimpleChannelInboundHandler;
  *
  */
 public class LoginToGateHandler extends SimpleChannelInboundHandler<Packet> implements ChannelHandlerGenerator {
-	static final CustomLogger logger = CustomLogger.getLogger(LoginToGateHandler.class);
 	public void channelActive(final ChannelHandlerContext ctx) {
-		logger.devLog("connect to {} success", ctx.channel().remoteAddress());
 		LoginServerManager.getInstance().onGateConnected(ctx.channel());
 	}
 	
 	@Override
 	public void channelRead0(final ChannelHandlerContext ctx, final Packet coder) throws Exception {
-		
+		//TODO: 这里应该不会有, 我们只做从本服到网关服的单向通信
 	}
 	
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		logger.devLog("warning!!!! connect to {} fail", ctx.channel().remoteAddress());
+		LoginServerManager.getInstance().onGateDisconnected(ctx.channel());
 		ctx.fireChannelInactive();
 	}
 

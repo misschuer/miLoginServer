@@ -1,6 +1,6 @@
 package cc.mi.login.server;
 
-import cc.mi.core.coder.Packet;
+import cc.mi.core.packet.Packet;
 import cc.mi.core.server.ServerContext;
 
 public class LoginContext extends ServerContext {

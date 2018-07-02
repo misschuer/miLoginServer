@@ -6,8 +6,8 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-import cc.mi.core.coder.Packet;
 import cc.mi.core.handler.AbstractHandler;
+import cc.mi.core.packet.Packet;
 import cc.mi.core.server.ServerContext;
 import cc.mi.login.config.ServerConfig;
 import io.netty.channel.Channel;
