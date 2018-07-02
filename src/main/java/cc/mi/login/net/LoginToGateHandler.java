@@ -8,12 +8,16 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-public class LoginHandler extends SimpleChannelInboundHandler<Packet> implements ChannelHandlerGenerator {
-	static final CustomLogger logger = CustomLogger.getLogger(LoginHandler.class);
-	
+/**
+ * 网关服不会主动发消息到这里
+ * @author gy
+ *
+ */
+public class LoginToGateHandler extends SimpleChannelInboundHandler<Packet> implements ChannelHandlerGenerator {
+	static final CustomLogger logger = CustomLogger.getLogger(LoginToGateHandler.class);
 	public void channelActive(final ChannelHandlerContext ctx) {
 		logger.devLog("connect to {} success", ctx.channel().remoteAddress());
-		LoginServerManager.getInstance().onCenterConnected(ctx.channel());
+		LoginServerManager.getInstance().onGateConnected(ctx.channel());
 	}
 	
 	@Override
@@ -22,7 +26,7 @@ public class LoginHandler extends SimpleChannelInboundHandler<Packet> implements
 	}
 	
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		System.out.println("login client inactive");
+		logger.devLog("warning!!!! connect to {} fail", ctx.channel().remoteAddress());
 		ctx.fireChannelInactive();
 	}
 
@@ -33,6 +37,6 @@ public class LoginHandler extends SimpleChannelInboundHandler<Packet> implements
 
 	@Override
 	public ChannelHandler newChannelHandler() {
-		return new LoginHandler();
+		return new LoginToGateHandler();
 	}
 }

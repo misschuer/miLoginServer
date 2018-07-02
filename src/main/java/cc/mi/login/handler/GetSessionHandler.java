@@ -6,73 +6,68 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-import cc.mi.core.coder.Coder;
-import cc.mi.core.generate.msg.GetSession;
+import cc.mi.core.coder.Packet;
 import cc.mi.core.handler.AbstractHandler;
-import cc.mi.core.server.ContextManager;
 import cc.mi.core.server.ServerContext;
-import cc.mi.core.server.SessionStatus;
 import cc.mi.login.config.ServerConfig;
-import cc.mi.login.server.LoginContext;
-import cc.mi.login.system.LoginSystemManager;
 import io.netty.channel.Channel;
 
 public class GetSessionHandler extends AbstractHandler {
 
 	@Override
-	public void handle(ServerContext player, Channel channel, Coder decoder) {
-		GetSession coder = (GetSession)decoder;
-		
-		int fd = coder.getFd();
-		String sessionKey = coder.getSessionkey();
-		
-		//在这里就已经验证session的有效性并解析出一个map交给GetSession
-		Map<String, String> querys = new HashMap<>();
-		if (!parseSessionKey(querys, sessionKey)) {
-			//这个还是蛮正常的，因为会出现一台机器多个平台的情况，平台密钥不会相同，所以tea_pdebug就好
-			//tea_pdebug("LogindApp::on_create_conn_get_session ParseSessionKey failed");
-			ContextManager.closeSession(LoginSystemManager.getCenterChannel(), fd);
-			return;
-		}
-		 
-		int gaptime = 900;		//页游默认为15分钟
-		if ("y".equals(querys.get("mobile"))) {		
-			gaptime = 86400;	//手游默认为24小时
-		}
-		
-		//验证一下session_key的时效性
-		if (!checkSessionKeyTimeout(fd, sessionKey, Integer.parseInt(querys.get("time")), gaptime)) {
-			//tea_pwarn("LogindApp::on_create_conn_get_session CheckSessionKeyTimeout failed");
-			ContextManager.closeSession(LoginSystemManager.getCenterChannel(), fd);
-			return;
-		}
-	
-		//如果连接不存在,则根据解开的session结果进行创建对应的session实例
-		LoginContext loginContext = (LoginContext) ContextManager.getContext(fd);
-		if (loginContext != null && loginContext.getStatus() == SessionStatus.STATUS_NEVER) {
-//			tea_pwarn("LogindApp::on_create_conn_get_session create_sesstion duplicate!");
-			return;
-		}
-		
-		//为顶号服务的
-		if (loginContext == null) {
-			loginContext = new LoginContext(fd);
-			String remoteIp = querys.get("remote_ip");
-			if (remoteIp == null || "".equals(remoteIp)) {
-				loginContext.setRemoteIp(LoginSystemManager.getHostInfoKey(fd));
-			} else {
-				loginContext.setRemoteIp(remoteIp);
-			}
-			loginContext.setRemotePort(LoginSystemManager.getHostInfoValue(fd));
-			ContextManager.pushContext(loginContext);
-		}	
-	
-		//要么成功,要么失败
-		if(loginContext.getSession(querys)) {
-			LoginSystemManager.ip2Sessionkey.put(loginContext.getRemoteIp(), sessionKey);
-		} else {
-			loginContext.close(LoginSystemManager.getCenterChannel(), (short) 0, "");
-		}
+	public void handle(ServerContext player, Channel channel, Packet decoder) {
+//		GetSession coder = (GetSession)decoder;
+//		
+//		int fd = coder.getFd();
+//		String sessionKey = coder.getSessionkey();
+//		
+//		//在这里就已经验证session的有效性并解析出一个map交给GetSession
+//		Map<String, String> querys = new HashMap<>();
+//		if (!parseSessionKey(querys, sessionKey)) {
+//			//这个还是蛮正常的，因为会出现一台机器多个平台的情况，平台密钥不会相同，所以tea_pdebug就好
+//			//tea_pdebug("LogindApp::on_create_conn_get_session ParseSessionKey failed");
+//			ContextManager.closeSession(LoginSystemManager.getCenterChannel(), fd);
+//			return;
+//		}
+//		 
+//		int gaptime = 900;		//页游默认为15分钟
+//		if ("y".equals(querys.get("mobile"))) {		
+//			gaptime = 86400;	//手游默认为24小时
+//		}
+//		
+//		//验证一下session_key的时效性
+//		if (!checkSessionKeyTimeout(fd, sessionKey, Integer.parseInt(querys.get("time")), gaptime)) {
+//			//tea_pwarn("LogindApp::on_create_conn_get_session CheckSessionKeyTimeout failed");
+//			ContextManager.closeSession(LoginSystemManager.getCenterChannel(), fd);
+//			return;
+//		}
+//	
+//		//如果连接不存在,则根据解开的session结果进行创建对应的session实例
+//		LoginContext loginContext = (LoginContext) ContextManager.getContext(fd);
+//		if (loginContext != null && loginContext.getStatus() == SessionStatus.STATUS_NEVER) {
+////			tea_pwarn("LogindApp::on_create_conn_get_session create_sesstion duplicate!");
+//			return;
+//		}
+//		
+//		//为顶号服务的
+//		if (loginContext == null) {
+//			loginContext = new LoginContext(fd);
+//			String remoteIp = querys.get("remote_ip");
+//			if (remoteIp == null || "".equals(remoteIp)) {
+//				loginContext.setRemoteIp(LoginSystemManager.getHostInfoKey(fd));
+//			} else {
+//				loginContext.setRemoteIp(remoteIp);
+//			}
+//			loginContext.setRemotePort(LoginSystemManager.getHostInfoValue(fd));
+//			ContextManager.pushContext(loginContext);
+//		}	
+//	
+//		//要么成功,要么失败
+//		if(loginContext.getSession(querys)) {
+//			LoginSystemManager.ip2Sessionkey.put(loginContext.getRemoteIp(), sessionKey);
+//		} else {
+//			loginContext.close(LoginSystemManager.getCenterChannel(), (short) 0, "");
+//		}
 	}
 	
 	private boolean parseURLParams(String params, Map<String, String> querys) {
@@ -167,30 +162,30 @@ public class GetSessionHandler extends AbstractHandler {
 	
 	//传入session验证是否已经过期
 	boolean checkSessionKeyTimeout(int fd, final String sessionKey, int keyTime, int gaptime) {
-		//校验时间
-		if (!ServerConfig.isCheckSessionKeyTime()) {
-			return true;
-		}
-
-		//本连接的IP
-		String thisIp = LoginSystemManager.getHostInfoKey(fd);
-		if (thisIp == null || thisIp.isEmpty()) {
-//			tea_pwarn("CheckSessionKeyTimeout this_ip is empty!");		
-			return false;
-		}
-
-		//如果上次的IP跟本次没有变化则不过期
-		if (sessionKey.equals(LoginSystemManager.ip2Sessionkey.get(thisIp))) {
-			return true;
-		}
-		
-		//验证时效性,允许误差
-		int now = (int) (System.currentTimeMillis() / 1000);
-		//误差操作过了且不是断线重连上来的
-		if(keyTime < now - gaptime || keyTime > now + gaptime) {
-//			tea_pwarn("CheckSessionKeyTimeout key_time is faild");		
-			return false;
-		}
+//		//校验时间
+//		if (!ServerConfig.isCheckSessionKeyTime()) {
+//			return true;
+//		}
+//
+//		//本连接的IP
+//		String thisIp = LoginSystemManager.getHostInfoKey(fd);
+//		if (thisIp == null || thisIp.isEmpty()) {
+////			tea_pwarn("CheckSessionKeyTimeout this_ip is empty!");		
+//			return false;
+//		}
+//
+//		//如果上次的IP跟本次没有变化则不过期
+//		if (sessionKey.equals(LoginSystemManager.ip2Sessionkey.get(thisIp))) {
+//			return true;
+//		}
+//		
+//		//验证时效性,允许误差
+//		int now = (int) (System.currentTimeMillis() / 1000);
+//		//误差操作过了且不是断线重连上来的
+//		if(keyTime < now - gaptime || keyTime > now + gaptime) {
+////			tea_pwarn("CheckSessionKeyTimeout key_time is faild");		
+//			return false;
+//		}
 
 		return true;
 	}
