@@ -14,7 +14,7 @@ public class LoginHandler extends SimpleChannelInboundHandler<Packet> implements
 	
 	@Override
 	public void channelRead0(final ChannelHandlerContext ctx, final Packet coder) throws Exception {
-		
+		LoginServerManager.getInstance().pushPacket(coder);
 	}
 	
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {

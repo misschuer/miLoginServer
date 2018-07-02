@@ -6,13 +6,13 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-import cc.mi.core.handler.AbstractHandler;
+import cc.mi.core.handler.HandlerImpl;
 import cc.mi.core.packet.Packet;
 import cc.mi.core.server.ServerContext;
 import cc.mi.login.config.ServerConfig;
 import io.netty.channel.Channel;
 
-public class GetSessionHandler extends AbstractHandler {
+public class GetSessionHandler extends HandlerImpl {
 
 	@Override
 	public void handle(ServerContext player, Channel channel, Packet decoder) {

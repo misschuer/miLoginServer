@@ -1,17 +1,19 @@
 package cc.mi.login.handler;
 
-import cc.mi.core.handler.AbstractHandler;
+import cc.mi.core.generate.msg.CreateConnection;
+import cc.mi.core.handler.HandlerImpl;
+import cc.mi.core.log.CustomLogger;
 import cc.mi.core.packet.Packet;
 import cc.mi.core.server.ServerContext;
 import io.netty.channel.Channel;
 
-public class CreateConnectionHandler extends AbstractHandler {
-
+public class CreateConnectionHandler extends HandlerImpl {
+	
+	static final CustomLogger logger = CustomLogger.getLogger(CreateConnectionHandler.class);
 	@Override
 	public void handle(ServerContext player, Channel channel, Packet decoder) {
-//		CreateConnection coder = (CreateConnection)decoder;
-//		LoginSystemManager.putHostInfo(coder.getFd(), coder.getRemoteIp(), coder.getRemotePort());
-//		System.out.printf("on_netgd_create_conn fd:%u, ip:%s, port:%u\n", coder.getFd(), coder.getRemoteIp(), coder.getRemotePort());	
+		CreateConnection packet = (CreateConnection)decoder;
+		logger.devLog("fd = {} ip = {} port = {}", packet.getFd(), packet.getRemoteIp(), packet.getRemotePort());
 	}
 
 }

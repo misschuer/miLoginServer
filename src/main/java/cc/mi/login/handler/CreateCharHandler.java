@@ -1,11 +1,11 @@
 package cc.mi.login.handler;
 
-import cc.mi.core.handler.AbstractHandler;
+import cc.mi.core.handler.HandlerImpl;
 import cc.mi.core.packet.Packet;
 import cc.mi.core.server.ServerContext;
 import io.netty.channel.Channel;
 
-public class CreateCharHandler extends AbstractHandler {
+public class CreateCharHandler extends HandlerImpl {
 
 	@Override
 	public void handle(ServerContext player, Channel channel, Packet decoder) {
