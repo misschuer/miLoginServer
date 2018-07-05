@@ -11,9 +11,11 @@ import java.util.concurrent.TimeUnit;
 
 import cc.mi.core.constance.IdentityConst;
 import cc.mi.core.generate.Opcodes;
+import cc.mi.core.generate.msg.CloseSession;
 import cc.mi.core.handler.Handler;
 import cc.mi.core.manager.ServerManager;
 import cc.mi.core.packet.Packet;
+import cc.mi.login.handler.CheckSessionHandler;
 import cc.mi.login.handler.CreateConnectionHandler;
 
 public class LoginServerManager extends ServerManager {
@@ -29,7 +31,7 @@ public class LoginServerManager extends ServerManager {
 	
 	static {
 		handlers.put(Opcodes.MSG_CREATECONNECTION, new CreateConnectionHandler());
-		
+		handlers.put(Opcodes.MSG_CHECKSESSION, new CheckSessionHandler());
 		
 		opcodes = new LinkedList<>();
 		opcodes.addAll(handlers.keySet());
@@ -81,5 +83,12 @@ public class LoginServerManager extends ServerManager {
 		synchronized (this) {
 			packetQueue.add(packet);
 		}
+	}
+	
+	
+	public void closeSession(int fd) {
+		CloseSession cs = new CloseSession();
+		cs.setFd(fd);
+		this.gateChannel.writeAndFlush(cs);
 	}
 }
