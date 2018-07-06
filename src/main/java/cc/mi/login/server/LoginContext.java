@@ -1,16 +1,22 @@
 package cc.mi.login.server;
 
+import java.util.Map;
+
+import cc.mi.core.constance.OperateConst;
+import cc.mi.core.log.CustomLogger;
 import cc.mi.core.packet.Packet;
+import cc.mi.core.server.ContextManager;
 import cc.mi.core.server.ServerContext;
+import cc.mi.core.server.SessionStatus;
 
 public class LoginContext extends ServerContext {
-//	private static final Logger logger = Logger.getLogger(LoginContext.class);
+	static final CustomLogger logger = CustomLogger.getLogger(LoginContext.class);
 //	private static final int MAX_PLAYER_COUNT = 2000;
 //	private static final Queue<Integer> sessionQueue = new LinkedList<>();
 //	
-//	private String account;
-//	private String fromServerName;
-//	private LoginPlayer player;
+	private String account = null;
+	protected String fromServerName = null;
+	private LoginPlayer player = null;
 //	private boolean isFCM = false;
 //	private boolean hasPlatdata;			//登录sessionkey中是否携带平台信息
 //	private boolean hasFcm;					//登录sessionkey中是否携带防沉迷信息
@@ -23,11 +29,75 @@ public class LoginContext extends ServerContext {
 	public LoginContext(int fd) {
 		super(fd);
 	}
-//	
-	@Override
-	protected void send(Packet coder) {
-//		LoginSystemManager.getCenterChannel().writeAndFlush(coder);
+	
+	public boolean checkSession(final Map<String, String> params) {
+		// 如果已经登陆过了
+		if (this.account != null && !this.account.isEmpty() || this.player != null) {
+			logger.errorLog("checkSession repeat for fd = {}", this.getFd());
+			return false;
+		}
+
+		String platId   = params.get("pid");
+		String serverId = params.get("sid");
+		String guid     = params.get("uid");
+		
+//TODO:
+//		watcherGuid = querys.get("watcher");
+//		//是观察者
+//		if (!watcherGuid.isEmpty()) {
+//			//发内部协议到场景服,给这个连接下发对应的地图数据等
+//			this.generalId = querys.get("generalid");
+//			if(!sendToScenedAddMapWatcher())
+//				return false;
+//		}
+		
+		this.account = String.format("%s_%s_%s", platId, serverId, guid);
+		this.fromServerName = String.format("%s_%s", platId, serverId);
+		
+		// 验证通过
+		this.setStatus(SessionStatus.STATUS_AUTHED);
+		
+		Integer oldFd = ContextManager.getSessionFd(this.account);
+		//当前已经在线 或者 在session表里面找到成员也认为是已经有角色在线
+		// 顶号的逻辑是先让原来的下掉, 再重新发登录请求
+		if (oldFd != null) {
+			//通知角色正在顶号登录(让当前玩家重新checksession)
+			this.operationResult(OperateConst.OPERATE_LOGIN_REASON_LOGINED_IN, "");
+			this.account = null;
+			
+			//通知已经登录的客户端 下线
+			LoginContext oldContext = (LoginContext) ContextManager.getContext(oldFd);
+			if(oldContext != null) {
+				oldContext.closeSession(OperateConst.OPERATE_CLOSE_REASON_OTHER_LOGINED);
+			}
+			
+			return true;
+		}
+		// 修改账号登录信息
+//		LoginDB.INSTANCE.modifyAccount(account, pid, sid, uid, isFCM, this.getRemoteIp(), platData, 0);
+
+		// 拉角色列表
+//		LoginDB.INSTANCE.getCharList(account, new AbstractCallback<CharInfo>() {
+//			@Override
+//			public void invoke(CharInfo obj) {
+//				List<CharInfo> chars = new ArrayList<>();
+//				if (obj != null) {
+//					chars.add(obj);
+//				}
+////				Call_chars_list(session->m_delegate_sendpkt, chars, faction_name.c_str(), queen_name.c_str(), icon);
+//			}
+//		});
+		
+		
+		
+		// 记录已经验证的号
+		ContextManager.putSession(account, this.getFd());
+		
+	////TODO:		ObjMgr.CallAddWatch(fd_, GLOBAL_CLIENT_GAME_CONFIG);	
+		
+		return false;
 	}
+//	
 //
 //	/*获取sessionKey对象*/
 //	public boolean getSession(final Map<String, String> querys) {
@@ -577,4 +647,27 @@ public class LoginContext extends ServerContext {
 //	public void setFromServerName(String fromServerName) {
 //		this.fromServerName = fromServerName;
 //	}
+
+	@Override
+	protected void sendToGate(Packet coder) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected void sendToCenter(Packet coder) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected void operationResult(short type, String data) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void closeSession(int type) {
+		LoginServerManager.getInstance().closeSession(this.getFd(), type);
+	}
 }

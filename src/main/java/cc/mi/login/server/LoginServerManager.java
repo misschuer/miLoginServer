@@ -15,6 +15,7 @@ import cc.mi.core.generate.msg.CloseSession;
 import cc.mi.core.handler.Handler;
 import cc.mi.core.manager.ServerManager;
 import cc.mi.core.packet.Packet;
+import cc.mi.core.server.ContextManager;
 import cc.mi.login.handler.CheckSessionHandler;
 import cc.mi.login.handler.CreateConnectionHandler;
 
@@ -85,10 +86,7 @@ public class LoginServerManager extends ServerManager {
 		}
 	}
 	
-	
-	public void closeSession(int fd) {
-		CloseSession cs = new CloseSession();
-		cs.setFd(fd);
-		this.gateChannel.writeAndFlush(cs);
+	public void closeSession(int fd, int reasonType) {
+		ContextManager.closeSession(this.gateChannel, fd, reasonType);
 	}
 }
