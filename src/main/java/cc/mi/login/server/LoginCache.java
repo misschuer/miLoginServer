@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import cc.mi.core.binlog.data.BinlogObject;
-import cc.mi.core.binlog.data.GuidObject;
+import cc.mi.core.binlog.data.Binlog;
+import cc.mi.core.binlog.data.BinlogModifier;
 import cc.mi.core.constance.ObjectType;
 import cc.mi.core.constance.PlayerEnumFields;
 import cc.mi.core.utils.FileUtils;
@@ -155,7 +155,7 @@ public enum LoginCache {
 	// }
 
 	// 读取对象集合
-	public boolean loadDataSet(final String guid, List<GuidObject> result) {
+	public boolean loadDataSet(final String guid, List<BinlogModifier> result) {
 		List<String> lines = new LinkedList<>();
 		if (!FileUtils.INSTANCE.loadPlayerBinlog(ServerConfig.getHddDataPath(), guid, lines)) {
 			return false;
@@ -165,7 +165,7 @@ public enum LoginCache {
 			String gd = lines.get(i);
 			String ints = lines.get(i + 1);
 			String strs = lines.get(i + 2);
-			BinlogObject obj = this.createBinlogObject(gd);
+			Binlog obj = this.createBinlogObject(gd);
 			obj.fromString(ints, strs);
 			result.add(obj);
 		}
@@ -177,8 +177,8 @@ public enum LoginCache {
 	}
 
 	// 根据guid来区分要new什么样的binlog
-	public BinlogObject createBinlogObject(final String guid) {
-		BinlogObject obj = null;
+	public Binlog createBinlogObject(final String guid) {
+		Binlog obj = null;
 		switch (guid.charAt(0)) {
 		case ObjectType.PLAYER:
 			obj = new LoginPlayer(PlayerEnumFields.PLAYER_INT_FIELDS_SIZE, PlayerEnumFields.PLAYER_STR_FIELDS_SIZE);
@@ -191,15 +191,15 @@ public enum LoginCache {
 	}
 
 	// 读取玩家对象
-	public LoginPlayer loadHddPlayer(final String guid, List<GuidObject> result) {
+	public LoginPlayer loadHddPlayer(final String guid, List<BinlogModifier> result) {
 		if (!this.loadDataSet(guid, result)) {
 			return null;
 		}
 
 		Set<String> guidSet = new HashSet<>();
-		Iterator<GuidObject> iter = result.iterator();
+		Iterator<BinlogModifier> iter = result.iterator();
 		for (; iter.hasNext();) {
-			GuidObject obj = iter.next();
+			BinlogModifier obj = iter.next();
 			// 去重
 			if (guidSet.contains(obj.getGuid())) {
 				iter.remove();
