@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import cc.mi.core.binlog.data.Binlog;
+import cc.mi.core.binlog.data.BinlogData;
 import cc.mi.core.binlog.data.BinlogModifier;
 import cc.mi.core.constance.ObjectType;
 import cc.mi.core.constance.PlayerEnumFields;
@@ -165,7 +165,7 @@ public enum LoginCache {
 			String gd = lines.get(i);
 			String ints = lines.get(i + 1);
 			String strs = lines.get(i + 2);
-			Binlog obj = this.createBinlogObject(gd);
+			BinlogData obj = this.createBinlogObject(gd);
 			obj.fromString(ints, strs);
 			result.add(obj);
 		}
@@ -177,8 +177,8 @@ public enum LoginCache {
 	}
 
 	// 根据guid来区分要new什么样的binlog
-	public Binlog createBinlogObject(final String guid) {
-		Binlog obj = null;
+	public BinlogData createBinlogObject(final String guid) {
+		BinlogData obj = null;
 		switch (guid.charAt(0)) {
 		case ObjectType.PLAYER:
 			obj = new LoginPlayer(PlayerEnumFields.PLAYER_INT_FIELDS_SIZE, PlayerEnumFields.PLAYER_STR_FIELDS_SIZE);
