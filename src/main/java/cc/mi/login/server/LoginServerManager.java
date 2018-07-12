@@ -11,7 +11,6 @@ import java.util.concurrent.TimeUnit;
 
 import cc.mi.core.constance.IdentityConst;
 import cc.mi.core.generate.Opcodes;
-import cc.mi.core.generate.msg.CloseSession;
 import cc.mi.core.handler.Handler;
 import cc.mi.core.manager.ServerManager;
 import cc.mi.core.packet.Packet;
@@ -89,4 +88,6 @@ public class LoginServerManager extends ServerManager {
 	public void closeSession(int fd, int reasonType) {
 		ContextManager.closeSession(this.gateChannel, fd, reasonType);
 	}
+	
+	
 }

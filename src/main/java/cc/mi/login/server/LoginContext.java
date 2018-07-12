@@ -2,6 +2,7 @@ package cc.mi.login.server;
 
 import java.util.Map;
 
+import cc.mi.core.constance.ObjectType;
 import cc.mi.core.constance.OperateConst;
 import cc.mi.core.log.CustomLogger;
 import cc.mi.core.packet.Packet;
@@ -92,99 +93,12 @@ public class LoginContext extends ServerContext {
 		
 		// 记录已经验证的号
 		ContextManager.putSession(account, this.getFd());
+		// 给客户端发送服务器信息
+		LoginServerManager.getInstance().addWatchAndCall(this.getFd(), ObjectType.GLOBAL_CLIENT_GAME_CONFIG);
 		
-	////TODO:		ObjMgr.CallAddWatch(fd_, GLOBAL_CLIENT_GAME_CONFIG);	
-		
-		return false;
+		return true;
 	}
-//	
-//
-//	/*获取sessionKey对象*/
-//	public boolean getSession(final Map<String, String> querys) {
-//		 //如果已经登录过了
-//	    if (account != null && !account.isEmpty() || player != null) {
-////	    	tea_perror("account[%s] re get session", m_account.c_str());	
-//	    	return false;
-//	    }
-//
-//		//解析URL
-//		String pid = querys.get("pid");
-//		String sid = querys.get("sid");
-//		String uid = querys.get("uid");
-//		String fcm = querys.get("indulge");
-//		String platData = querys.get("platdata");
-//		
-//		isFCM = fcm == "y";
-//		if (!fcm.isEmpty()) {
-//			this.hasFcm = true;
-//		}
-//		if (!platData.isEmpty()) {
-//			hasPlatdata = true;
-//		}
-//		watcherGuid = querys.get("watcher");
-//		//是观察者
-//		if (!watcherGuid.isEmpty()) {
-//			//发内部协议到场景服,给这个连接下发对应的地图数据等
-//			this.generalId = querys.get("generalid");
-//			if(!sendToScenedAddMapWatcher())
-//				return false;
-//		}
-//
-//		//TODO: 帐户名称，并且判断一下是否超长
-//		this.account = String.format("%s_%s_%s", pid, sid, uid);
-//		
-//		this.fromServerName = pid + "_" + sid;
-//
-////		tea_pdebug("account %s getsession!", this.account);
-//		//状态变成验证通过	
-//		this.setStatus(SessionStatus.STATUS_AUTHED);
-//		
-//		Integer oldFd = ContextManager.getSessionFd(this.account);
-//		//当前已经在线 或者 在session表里面找到成员也认为是已经有角色在线
-//		// 顶号的逻辑是先让原来的下掉, 再去
-//		if (oldFd != null) {
-//			//发条错误信息
-////			tea_pwarn("LogindContext::Get_Session %s, but char online", m_account.c_str());
-//		
-//			//通知角色已经登录
-//			this.callOperationResult(
-//					LoginSystemManager.getCenterChannel(), 
-//					OperateConst.OPERATE_TYPE_LOGIN, 
-//					OperateConst.OPERATE_LOGIN_REASON_LOGINED_IN, 
-//					""
-//			);
-//			
-//			//通知已经登录的客户端
-//			LoginContext oldContext = (LoginContext) ContextManager.getContext(oldFd);
-//			if(oldContext != null) {
-//				oldContext.close(LoginSystemManager.getCenterChannel(), OperateConst.OPERATE_CLOSE_REASON_OTHER_LOGINED, "", true);
-//				this.account = null;
-//			}
-//			
-//			return true;
-//		}
-//
-//		final int fd = this.getFd();
-//		LoginDB.INSTANCE.modifyAccount(account, pid, sid, uid, isFCM, this.getRemoteIp(), platData, 0);
-//		LoginDB.INSTANCE.getCharList(account, new AbstractCallback<CharInfo>() {
-//			@Override
-//			public void invoke(CharInfo obj) {
-//				List<CharInfo> chars = new ArrayList<>();
-//				if (obj != null) {
-//					chars.add(obj);
-//				}
-////				Call_chars_list(session->m_delegate_sendpkt, chars, faction_name.c_str(), queen_name.c_str(), icon);
-//			}
-//		});
-//
-//		ContextManager.putSession(account, fd);
-//
-//		//为客户端监听其最新的模块信息
-////TODO:		ObjMgr.CallAddWatch(fd_, GLOBAL_CLIENT_GAME_CONFIG);	
-//
-//		return true;
-//	}
-//	
+
 //	public void onClosed() {
 ////		tea_pdebug("player %s %u logout. begin", m_lguid.c_str(), fd_);
 ////		if(m_player)

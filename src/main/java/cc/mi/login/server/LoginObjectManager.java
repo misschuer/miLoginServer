@@ -1,6 +1,5 @@
 package cc.mi.login.server;
 
-import java.util.LinkedList;
 import java.util.List;
 
 import cc.mi.core.binlog.data.BinlogModifier;
