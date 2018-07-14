@@ -155,7 +155,7 @@ public enum LoginCache {
 	// }
 
 	// 读取对象集合
-	public boolean loadDataSet(final String guid, List<BinlogModifier> result) {
+	public boolean loadDataSet(final String guid, List<BinlogData> result) {
 		List<String> lines = new LinkedList<>();
 		if (!FileUtils.INSTANCE.loadPlayerBinlog(ServerConfig.getHddDataPath(), guid, lines)) {
 			return false;
@@ -184,6 +184,7 @@ public enum LoginCache {
 			obj = new LoginPlayer(PlayerEnumFields.PLAYER_INT_FIELDS_SIZE, PlayerEnumFields.PLAYER_STR_FIELDS_SIZE);
 			break;
 		default:
+			obj = new BinlogData(guid, 1 << 6, 1 << 6);
 			break;
 		}
 		obj.setGuid(guid);
@@ -191,13 +192,13 @@ public enum LoginCache {
 	}
 
 	// 读取玩家对象
-	public LoginPlayer loadHddPlayer(final String guid, List<BinlogModifier> result) {
+	public LoginPlayer loadHddPlayer(final String guid, List<BinlogData> result) {
 		if (!this.loadDataSet(guid, result)) {
 			return null;
 		}
 
 		Set<String> guidSet = new HashSet<>();
-		Iterator<BinlogModifier> iter = result.iterator();
+		Iterator<BinlogData> iter = result.iterator();
 		for (; iter.hasNext();) {
 			BinlogModifier obj = iter.next();
 			// 去重
