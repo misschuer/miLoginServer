@@ -75,7 +75,11 @@ public class LoginServerManager extends ServerManager {
 				if (diff < 0 || diff > 1000) {
 					logger.warnLog("too heavy logical that execute");
 				}
-				instance.doWork(diff);
+				try {
+					instance.doWork(diff);
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
 			}
 		}, 1000, 100, TimeUnit.MILLISECONDS);
 	}
@@ -101,7 +105,7 @@ public class LoginServerManager extends ServerManager {
 	
 	private void loadServerValue() {
 		logger.devLog("login init");
-		logger.debugLog("load global value");
+		logger.devLog("load global value");
 		
 		this.cache.loadGlobalValue();
 		this.cache.loadFactionValue();
