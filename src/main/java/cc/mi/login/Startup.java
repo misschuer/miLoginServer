@@ -13,14 +13,18 @@ public class Startup {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				try {
-					while (true) {
+				while (true) {
+					try {
 						ClientCore.INSTANCE.start(ServerConfig.getGateIp(), ServerConfig.getGatePort(), new LoginToGateHandler());
+					} catch (Exception e) {
+					} finally {
 						logger.devLog("连接网关服错误,系统将在1秒钟后重新连接");
-						Thread.sleep(1000);
+						try {
+							Thread.sleep(1000);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 					}
-				} catch (Exception e) {
-					e.printStackTrace();
 				}
 			}
 		}, "bootstrap-to-gate").start();
@@ -28,14 +32,18 @@ public class Startup {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				try {
-					while (true) {
+				while (true) {
+					try {
 						ClientCore.INSTANCE.start(ServerConfig.getCenterIp(), ServerConfig.getCenterPort(), new LoginHandler());
+					} catch (Exception e) {
+					} finally {
 						logger.devLog("连接中心服错误,系统将在1秒钟后重新连接");
-						Thread.sleep(1000);
+						try {
+							Thread.sleep(1000);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 					}
-				} catch (Exception e) {
-					e.printStackTrace();
 				}
 			}
 		}, "bootstrap-to-center").start();
