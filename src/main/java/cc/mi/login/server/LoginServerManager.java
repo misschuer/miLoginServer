@@ -10,7 +10,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import cc.mi.core.constance.IdentityConst;
-import cc.mi.core.constance.ServerState;
 import cc.mi.core.generate.Opcodes;
 import cc.mi.core.handler.Handler;
 import cc.mi.core.log.CustomLogger;
@@ -36,6 +35,8 @@ public class LoginServerManager extends ServerManager {
 	
 	// 当前帧刷新执行的代码逻辑
 	protected ServerProcessBlock process;
+	
+	private LoginCache cache;
 	
 	// 最后一次执行帧刷新的时间戳
 	protected long timestamp = 0;
@@ -79,6 +80,15 @@ public class LoginServerManager extends ServerManager {
 		}, 1000, 100, TimeUnit.MILLISECONDS);
 	}
 	
+	@Override
+	protected void afterCenterConnectedInnerServerInit() {
+		cache = new LoginCache(this.centerChannel);
+	}
+	
+	public LoginCache getCache() {
+		return this.cache;
+	}
+	
 	/**
 	 * 进行帧刷新
 	 */
@@ -93,32 +103,41 @@ public class LoginServerManager extends ServerManager {
 		logger.devLog("login init");
 		logger.debugLog("load global value");
 		
-//		vector<GuidObject*> vec;
-//		g_app->m_cache->LoadGlobalValue();
-//		g_app->m_db_access_mgr->Load_GlobalValue();
-//		tea_pinfo("load global value end");
-//
-//		tea_pinfo("load league value begin");
-//		g_app->m_cache->LoadFractionValue();
-//		tea_pinfo("load league value end");
-//
-//		tea_pinfo("load faction data begin");
-//		g_app->m_cache->LoadFractionData();
-//		tea_pinfo("load faction data end");
+		this.cache.loadGlobalValue();
+		this.cache.loadFactionValue();
 		
-//		g_app->OnDataReady();
-		
-		
+		this.onDataReady();
 	}
 	
 	private void onDataReady() {
 		this.process = new ServerProcessBlock() {
 			@Override
 			public void run(int diff) {
-				
+//				//登录队列
+//				m_login_queue->Update(diff);
+//
+//				//地图管理器心跳
+//				if(MapMgr)
+//					MapMgr->Update(diff);
+//
+//				//所有的player心跳
+//				for (auto it = context_map_.begin();it != context_map_.end();++it)
+//				{
+//					it->second->Update(diff);
+//				}
+//				 
+//				//是否是异步查询回调
+//				if(m_db_access_mgr)
+//					m_db_access_mgr->UpdateAsync();
+//				
+//				//http服务
+//				if(m_http ) 
+//					m_http->Update();
+//				else
+//					m_http = new HttpHandler;
 			}
 		};
-		// TODO: 发送消息给中心服 通知初始化完成
+		this.startReady();
 	}
 	
 	private void initServer(int diff) {
@@ -154,6 +173,4 @@ public class LoginServerManager extends ServerManager {
 	public void closeSession(int fd, int reasonType) {
 		ContextManager.closeSession(this.gateChannel, fd, reasonType);
 	}
-	
-	
 }

@@ -33,7 +33,7 @@ public enum LoginDB {
 		//验证是否变化,则更新
 		boolean hasChanged = false;
 		//尝试从本地缓存取
-		Account info = LoginCache.INSTANCE.getAccount(account);
+		Account info = LoginServerManager.getInstance().getCache().getAccount(account);
 		
 		//创建一个新的帐户信息指针	
 		if (info == null) {
@@ -47,7 +47,7 @@ public enum LoginDB {
 			info.setPlatData(platData);
 			info.setIsFcm(fcm);
 			
-			LoginCache.INSTANCE.addAccountAndSave(info);
+			LoginServerManager.getInstance().getCache().addAccountAndSave(info);
 			hasChanged = true;
 		}
 		
@@ -103,7 +103,7 @@ public enum LoginDB {
 	public void getCharList(final String account, Callback<CharInfo> callback) {
 		logger.info(String.format("account %s get char list", account));
 
-		CharInfo info = LoginCache.INSTANCE.getCharInfo(account);
+		CharInfo info = LoginServerManager.getInstance().getCache().getCharInfo(account);
 
 		//如果本地是完整库根本不需要再次去读数据库
 		if (!this.isLocalDbIntegrated && info == null) {
@@ -118,8 +118,8 @@ public enum LoginDB {
 							info.setGuid(chars.getGuid());
 							info.setName(chars.getName());
 							// 如果有属性可以再加
-							LoginCache.INSTANCE.addAccountToChar(account, info);
-							LoginCache.INSTANCE.saveAccountCharInfo(account, chars.getGuid());
+							LoginServerManager.getInstance().getCache().addAccountToChar(account, info);
+							LoginServerManager.getInstance().getCache().saveAccountCharInfo(account, chars.getGuid());
 						}
 						callback.invoke(info);
 					}

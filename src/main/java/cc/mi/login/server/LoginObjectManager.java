@@ -3,13 +3,14 @@ package cc.mi.login.server;
 import java.util.List;
 
 import cc.mi.core.binlog.data.BinlogData;
+import cc.mi.core.constance.IdentityConst;
 import cc.mi.core.server.ServerObjectManager;
 
 public class LoginObjectManager extends ServerObjectManager  {
 	public static final LoginObjectManager INSTANCE = new LoginObjectManager();
 	
 	private LoginObjectManager() {
-		super();
+		super(IdentityConst.SERVER_TYPE_LOGIN);
 	}
 	
 	public LoginPlayer loadPlayer(String guid, final List<BinlogData> result) {

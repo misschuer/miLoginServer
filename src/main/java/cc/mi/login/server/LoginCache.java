@@ -17,16 +17,21 @@ import cc.mi.core.utils.TimestampUtils;
 import cc.mi.login.config.ServerConfig;
 import cc.mi.login.module.CharInfo;
 import cc.mi.login.table.Account;
+import io.netty.channel.Channel;
 
-public enum LoginCache {
-	INSTANCE;
+public final class LoginCache {
 
 	private final Map<String, Account> accountHash = new HashMap<>();
 	private final Map<String, CharInfo> charInfoHash = new HashMap<>();
 	private final Map<String, String> charNameHash = new HashMap<>();
 	private final Map<String, Integer> logoutCharHash = new HashMap<>();
+	private final Channel channel;
 
-	private LoginCache() {
+	public LoginCache(Channel channel) {
+		this.channel = channel;
+		LoginObjectManager.INSTANCE.createIndex(ObjectType.GLOBAL_INDEX);
+		LoginObjectManager.INSTANCE.createIndex(ObjectType.FACTION_INDEX);
+		LoginObjectManager.INSTANCE.createIndex(ObjectType.PLAYER_INDEX);
 	}
 
 	public void addAccountAndSave(Account accountTable) {
@@ -154,10 +159,10 @@ public enum LoginCache {
 	// player->SetAutoSavetime(t + g_Config.auto_save_time + irand(-60,60));
 	// }
 
-	// 读取对象集合
-	public boolean loadDataSet(final String guid, List<BinlogData> result) {
+	// 读取玩家对象集合
+	public boolean loadDataSet(final String binlogOwner, List<BinlogData> result) {
 		List<String> lines = new LinkedList<>();
-		if (!FileUtils.INSTANCE.loadPlayerBinlog(ServerConfig.getHddDataPath(), guid, lines)) {
+		if (!FileUtils.INSTANCE.loadPlayerBinlog(ServerConfig.getHddDataPath(), binlogOwner, lines)) {
 			return false;
 		}
 
@@ -664,54 +669,44 @@ public enum LoginCache {
 	// return true;
 	// }
 	//
-	// //读取世界变量对象
-	// bool LogindCache::LoadGlobalValue()
-	// {
-	// vector<GuidObject*> vec;
-	// return LoadDataSet(GLOBAL_VALUE_OWNER_STRING, vec);
-	// }
-	//
-	// //读取军团变量对象
-	// bool LogindCache::LoadFractionValue()
-	// {
-	// vector<GuidObject*> vec;
-	// if (!LoadDataSet(FACTION_BINLOG_OWNER_STRING, vec))
-	// return false;
-	//
-	// vector<string> guid_vec;
-	// for (auto it : vec) {
-	// guid_vec.push_back(it->guid());
-	// }
-	//
-	// ObjMgr.CallPutsObject(FACTION_BINLOG_OWNER_STRING, vec, [guid_vec](bool)
-	// {
-	// for (auto it : guid_vec) {
-	// ObjMgr.InsertObjOwner(it);
-	// }
-	// });
-	//
-	// return true;
-	// }
-	//
-	// //读取军团数据
-	// bool LogindCache::LoadFractionData()
-	// {
-	// vector<GuidObject*> vec;
-	// if (!LoadDataSet(FACTION_DATA_OWNER_STRING, vec))
-	// return false;
-	//
-	// vector<string> guid_vec;
-	// for (auto it : vec) {
-	// guid_vec.push_back(it->guid());
-	// }
-	//
-	// ObjMgr.CallPutsObject(FACTION_DATA_OWNER_STRING, vec, [guid_vec](bool) {
-	// for (auto it : guid_vec) {
-	// ObjMgr.InsertObjOwner(it);
-	// }
-	// });
-	//
-	// return true;
-	// }
+	
+	//读取世界变量对象
+	public boolean loadGlobalValue() {
+		List<BinlogData> list = new LinkedList<>();
+		this.loadDataSet(ObjectType.GLOBAL_VALUE_OWNER_STRING, list);
+		
+		Set<String> binlogSet = new HashSet<>();
+		for (BinlogData obj : list) {
+			binlogSet.add(obj.getGuid());
+		}
+		// 自己创建
+		for (String binlogId : ObjectType.GLOBAL_VALUE_LIST) {
+			if (!binlogSet.contains(binlogId)) {
+				BinlogData obj = this.createBinlogObject(binlogId);
+				obj.setOwner(ObjectType.GLOBAL_VALUE_OWNER_STRING);
+				list.add(obj);
+				binlogSet.add(binlogId);
+			}
+		}
+		
+		LoginObjectManager.INSTANCE.putObjects(this.channel, ObjectType.GLOBAL_VALUE_OWNER_STRING, list);
+		for (BinlogData obj : list) {
+			LoginObjectManager.INSTANCE.attachObject(obj);
+		}
+		
+		return true;
+	}
+	
+	//读取军团变量对象
+	public boolean loadFactionValue() {
+		List<BinlogData> list = new LinkedList<>();
+		this.loadDataSet(ObjectType.FACTION_BINLOG_OWNER_STRING, list);
+		
+		LoginObjectManager.INSTANCE.putObjects(this.channel, ObjectType.FACTION_BINLOG_OWNER_STRING, list);
+		for (BinlogData obj : list) {
+			LoginObjectManager.INSTANCE.attachObject(obj);
+		}
+		return true;
+	}
 
 }
