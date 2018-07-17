@@ -1,12 +1,9 @@
 package cc.mi.login.loginAction;
 
-import org.apache.log4j.Logger;
-
 import cc.mi.core.constance.LoginActionEnum;
 import cc.mi.core.loginAction.LoginActionBase;
 
 public class LoginActionLogin extends LoginActionBase {
-	private static final Logger logger = Logger.getLogger(LoginActionLogin.class);
 	
 	public LoginActionLogin(int fd, String guid) {
 		super(fd, guid);

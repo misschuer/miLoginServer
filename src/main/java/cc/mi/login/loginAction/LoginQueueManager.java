@@ -4,14 +4,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import org.apache.log4j.Logger;
-
 import cc.mi.core.constance.LoginActionEnum;
 import cc.mi.core.loginAction.ContextLoginManager;
 import cc.mi.login.server.LoginContext;
 
 public class LoginQueueManager extends ContextLoginManager {
-	private static final Logger logger = Logger.getLogger(LoginQueueManager.class);
+//	private static final Logger logger = Logger.getLogger(LoginQueueManager.class);
 	private Queue<LoginContext> offlinecontext = new LinkedList<>();
 	
 	public void pushAction(String guid, int fd, LoginActionEnum actionType) {
