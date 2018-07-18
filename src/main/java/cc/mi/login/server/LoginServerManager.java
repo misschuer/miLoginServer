@@ -103,6 +103,9 @@ public class LoginServerManager extends ServerManager {
 	}
 	
 	private void loadServerValue() {
+		if (this.centerChannel == null) {
+			return;
+		}
 		logger.devLog("login init");
 		logger.devLog("load global value");
 		
