@@ -25,21 +25,20 @@ public class LoginServerManager extends ServerManager {
 	
 	private static LoginServerManager instance;
 	
-	// 帧刷新
-	private static final ScheduledExecutorService excutor = Executors.newScheduledThreadPool(1);
-	// 消息包队列
-	private static final Queue<Packet> packetQueue = new LinkedList<>();
 	// 消息收到以后的回调
 	private static final Map<Integer, Handler> handlers = new HashMap<>();
 	private static final List<Integer> opcodes;
 	
+	// 帧刷新
+	private static final ScheduledExecutorService excutor = Executors.newScheduledThreadPool(1);
+	// 消息包队列
+	private static final Queue<Packet> packetQueue = new LinkedList<>();
 	// 当前帧刷新执行的代码逻辑
 	protected ServerProcessBlock process;
-	
-	private LoginCache cache;
-	
 	// 最后一次执行帧刷新的时间戳
 	protected long timestamp = 0;
+	
+	private LoginCache cache;
 	
 	static {
 		handlers.put(Opcodes.MSG_CREATECONNECTION, new CreateConnectionHandler());
@@ -98,7 +97,7 @@ public class LoginServerManager extends ServerManager {
 	 */
 	private void doWork(int diff) {
 		// 初始化服务器
-		this.initServer(diff);
+		this.doProcess(diff);
 		// 处理包信息
 		this.dealPacket();
 	}
@@ -144,13 +143,11 @@ public class LoginServerManager extends ServerManager {
 		this.startReady();
 	}
 	
-	private void initServer(int diff) {
+	private void doProcess(int diff) {
 		if (this.process != null) {
 			this.process.run(diff);
 		}
 	}
-	
-	
 	
 	private void dealPacket() {
 		while (!packetQueue.isEmpty()) {
