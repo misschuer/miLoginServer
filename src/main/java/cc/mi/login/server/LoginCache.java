@@ -1,5 +1,7 @@
 package cc.mi.login.server;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -10,25 +12,30 @@ import java.util.Set;
 
 import cc.mi.core.binlog.data.BinlogData;
 import cc.mi.core.binlog.data.BinlogModifier;
+import cc.mi.core.constance.GlobalFields;
 import cc.mi.core.constance.ObjectType;
 import cc.mi.core.constance.PlayerEnumFields;
+import cc.mi.core.generate.stru.CharInfo;
+import cc.mi.core.server.GuidManager;
 import cc.mi.core.utils.FileUtils;
 import cc.mi.core.utils.TimestampUtils;
 import cc.mi.login.config.ServerConfig;
-import cc.mi.login.module.CharInfo;
+import cc.mi.login.service.CharInfoService;
 import cc.mi.login.table.Account;
-import io.netty.channel.Channel;
 
-public final class LoginCache {
-
+public enum LoginCache {
+	INSTANCE;
+	
 	private final Map<String, Account> accountHash = new HashMap<>();
 	private final Map<String, CharInfo> charInfoHash = new HashMap<>();
 	private final Map<String, String> charNameHash = new HashMap<>();
 	private final Map<String, Integer> logoutCharHash = new HashMap<>();
-	private final Channel channel;
+	
+	static final String ACCOUNT_FILE = "account.info";
+	static final String ACCOUNT_CHAR_FILE = "account_char.info";
+	static final String CHAR_NAME_FILE = "char_name.info";
 
-	public LoginCache(Channel channel) {
-		this.channel = channel;
+	private LoginCache() {
 		LoginObjectManager.INSTANCE.createIndex(ObjectType.GLOBAL_INDEX);
 		LoginObjectManager.INSTANCE.createIndex(ObjectType.FACTION_INDEX);
 		LoginObjectManager.INSTANCE.createIndex(ObjectType.PLAYER_INDEX);
@@ -36,60 +43,36 @@ public final class LoginCache {
 
 	public void addAccountAndSave(Account accountTable) {
 		accountHash.put(accountTable.getName(), accountTable);
-		// TODO : save
-		// string str = info->ToString();
-		// m_storage->Goto(g_Config.player_data_hdd_path);
-		// m_storage->AddContent("account.txt", str + "\n");
+		File file = new File(ServerConfig.getHddDataPath() + "/" + ACCOUNT_FILE);
+		FileUtils.INSTANCE.append(file, accountTable.toString() + "\n");
 	}
 
 	public Account getAccount(final String account) {
 		return accountHash.get(account);
 	}
-
-	public CharInfo getCharInfo(String account) {
+	
+	public CharInfo getCharInfo(final String account) {
 		return charInfoHash.get(account);
 	}
 
-	public void addCharName(String guid, String name) {
+	public String getGuid(String account) {
+		return charInfoHash.get(account).getGuid();
+	}
+
+	public void addCharNameAndSave(String guid, String name) {
 		this.charNameHash.put(name, guid);
-		// m_storage->Goto(g_Config.player_data_hdd_path);
-		// m_storage->AddContent("char_name.txt", guid + ' ' + name + '\n');
+		File file = new File(ServerConfig.getHddDataPath() + "/" + CHAR_NAME_FILE);
+		FileUtils.INSTANCE.append(file, guid + " " + name + "\n");
 	}
 
 	public String findGuidByCharName(String name) {
 		return charNameHash.get(name);
 	}
 
-	//
-	// //读取所有的角色名
-	// void LogindCache::LoadAllCharName()
-	// {
-	// m_storage->Goto(g_Config.player_data_hdd_path);
-	// m_storage->ReadFile("char_name.txt", [&](const string &str){
-	// Tokens tokens;
-	// StrSplit(tokens, str, ' ');
-	// if(tokens.size() < 2)
-	// return true;
-	// m_charNameMaps[tokens[1]] = tokens[0];
-	// return true;
-	// });
-	// }
-	//
-	public void addAccountToChar(String account, CharInfo info) {
-		charInfoHash.put(account, info);
-	}
-
-	public void addAccountToChar(String account, String guid) {
-		CharInfo info = new CharInfo();
-		info.setGuid(guid);
-		addAccountToChar(account, info);
-	}
-
-	// 保存账号角色信息到硬盘中
-	public void saveAccountCharInfo(String account, String guid) {
-		// m_storage->Goto(g_Config.player_data_hdd_path);
-		// m_storage->AddContent("account_char.txt", account + ' ' + guid +
-		// '\n');
+	public void addAccountToCharAndSave(String account, CharInfo charInfo) {
+		charInfoHash.put(account, charInfo);
+		File file = new File(ServerConfig.getHddDataPath() + "/" + ACCOUNT_CHAR_FILE);
+		FileUtils.INSTANCE.append(file, CharInfoService.INSTANCE.toContentString(charInfo) + "\n");
 	}
 
 	//
@@ -126,22 +109,28 @@ public final class LoginCache {
 	// ++it;
 	// }
 	// }
-	
-	 //添加一个登出缓存玩家
-	 public void addLogoutPlayer(final String guid) {
-		 //对象管理器里没有，那就不用了
-		 if (LoginObjectManager.INSTANCE.get(guid) == null) {
-			 return;
-		 }
-		 this.logoutCharHash.put(guid, TimestampUtils.now());
-	 }
-	
-	 //删除一个登出玩家缓存
-	 public void delLogoutPlayer(final String guid) {
-	 	this.logoutCharHash.remove(guid);
-	 }
 
-	 
+	// 添加一个登出缓存玩家
+	public void addLogoutPlayer(final String guid) {
+		// 对象管理器里没有，那就不用了
+		if (LoginObjectManager.INSTANCE.get(guid) == null) {
+			return;
+		}
+		this.logoutCharHash.put(guid, TimestampUtils.now());
+	}
+
+	// 删除一个登出玩家缓存
+	public void delLogoutPlayer(final String guid) {
+		this.logoutCharHash.remove(guid);
+	}
+	
+	/**
+	 * 玩家自动保存心跳
+	 */
+	public void update() {
+		
+	}
+
 	// //玩家自动保存心跳
 	// void LogindCache::Update(logind_player *player)
 	// {
@@ -488,77 +477,7 @@ public final class LoginCache {
 	// }
 	// }
 	//
-	// //从本地硬盘把所有账号信息读出来
-	// void LogindCache::LoadAllAccountInfo()
-	// {
-	// m_storage->Goto(g_Config.player_data_hdd_path);
-	// stringstream ss;
-	// bool first_line = true;
-	// bool new_version = false;
-	// string account_file = g_Config.player_data_hdd_path + "/account.txt";
-	// if(!core_obj::Storage::IsHaveFile(account_file))
-	// {
-	// m_storage->AddContent("account.txt", "new version\n");
-	// return;
-	// }
-	//
-	// if(!m_storage->ReadFile("account.txt", [&](const string &str){
-	// if(first_line)
-	// {
-	// new_version = (str == "new version");
-	// first_line = false;
-	// return new_version;
-	// }
-	//
-	// account_table *info = new account_table;
-	// info->NewFromString(str);
-	// AddAccount(info);
-	// return true;
-	// }))
-	// {
-	// tea_perror("LogindCache::LoadAllAccountInfo read txt file fail");
-	// return;
-	// }
-	//
-	// //如果不是新版本的文件，删掉重来
-	// if(!new_version)
-	// {
-	// m_storage->Remove("account.txt");
-	// m_storage->AddContent("account.txt", "new version\n");
-	// }
-	// }
-	//
-	// //保存账号信息到硬盘中
-	// void LogindCache::SaveAccountInfo(account_table *info)
-	// {
-	// ASSERT(info);
-	// string str = info->ToString();
-	// m_storage->Goto(g_Config.player_data_hdd_path);
-	// m_storage->AddContent("account.txt", str + "\n");
-	// }
-	//
-	// //从本地硬盘把所有账号角色信息读出来
-	// void LogindCache::LoadAllAccountCharInfo()
-	// {
-	// m_storage->Goto(g_Config.player_data_hdd_path);
-	// stringstream ss;
-	// if(!m_storage->ReadFile("account_char.txt", [&](const string &str){
-	// Tokens tokens;
-	// StrSplit(tokens, str, ' ');
-	// AddAccountToChar(tokens[0], tokens[1]);
-	// return true;
-	// }))
-	// {
-	// tea_perror("LogindCache::LoadAllAccountInfo read txt file fail");
-	// return;
-	// }
-	// ////去重
-	// //m_storage->Remove("account_char.txt");
-	// //for (auto it:m_charListHD)
-	// //{
-	// // SaveAccountCharInfo(it.first, it.second.guid);
-	// //}
-	// }
+	
 	//
 	//
 	// //回档指定玩家
@@ -669,12 +588,76 @@ public final class LoginCache {
 	// return true;
 	// }
 	//
+
+	//读取所有的角色名
+	public void loadAllCharName() {
+		File file = new File(ServerConfig.getHddDataPath() + "/" + CHAR_NAME_FILE);
+		// 文件不存在就先创建
+		if (!file.exists()) {
+			try {
+				file.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else {
+			List<String> lines = new LinkedList<>();
+			FileUtils.INSTANCE.loadFile(file, lines);
+			for (String content : lines) {
+				if (content.isEmpty()) continue;
+				String[] params = content.split(" ");
+				charNameHash.put(params[ 1 ], params[ 0 ]);
+			}
+		}
+	}
 	
-	//读取世界变量对象
-	public boolean loadGlobalValue() {
+	// 从本地硬盘把所有账号信息读出来
+	public void loadAllAccountInfo() {
+		File file = new File(ServerConfig.getHddDataPath() + "/" + ACCOUNT_FILE);
+		// 文件不存在就先创建
+		if (!file.exists()) {
+			try {
+				file.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else {
+			List<String> lines = new LinkedList<>();
+			FileUtils.INSTANCE.loadFile(file, lines);
+			for (String content : lines) {
+				if (content.isEmpty()) continue;
+				Account info = new Account();
+				info.fromString(content);
+				accountHash.put(info.getName(), info);
+			}
+		}
+	}
+
+	//从本地硬盘把所有账号角色信息读出来
+	public void loadAllAccountCharInfo() {
+		File file = new File(ServerConfig.getHddDataPath() + "/" + ACCOUNT_CHAR_FILE);
+		// 文件不存在就先创建
+		if (!file.exists()) {
+			try {
+				file.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else {
+			List<String> lines = new LinkedList<>();
+			FileUtils.INSTANCE.loadFile(file, lines);
+			for (String content : lines) {
+				if (content.isEmpty()) continue;
+				CharInfo charInfo = CharInfoService.INSTANCE.fromString(content);
+				charInfoHash.put(charInfo.getAccountName(), charInfo);
+			}
+		}
+	 }
+
+	// 读取世界变量对象
+	public List<BinlogData> loadGlobalValue() {
 		List<BinlogData> list = new LinkedList<>();
 		this.loadDataSet(ObjectType.GLOBAL_VALUE_OWNER_STRING, list);
-		
+
 		Set<String> binlogSet = new HashSet<>();
 		for (BinlogData obj : list) {
 			binlogSet.add(obj.getGuid());
@@ -686,27 +669,30 @@ public final class LoginCache {
 				obj.setOwner(ObjectType.GLOBAL_VALUE_OWNER_STRING);
 				list.add(obj);
 				binlogSet.add(binlogId);
+				// 有index的先同步
+				if (binlogId == ObjectType.GLOBAL_GUID_INDEX_MANAGER) {
+					int playerMax = (int) obj.getUInt32(GlobalFields.GLOBAL_GUID_INDEX_MANAGER_INT_FIELD_PLAYER_MAX);
+					GuidManager.INSTANCE.syncPlayerGuidIndex(playerMax);
+				}
 			}
 		}
-		
-		LoginObjectManager.INSTANCE.putObjects(this.channel, ObjectType.GLOBAL_VALUE_OWNER_STRING, list);
+
 		for (BinlogData obj : list) {
 			LoginObjectManager.INSTANCE.attachObject(obj);
 		}
-		
-		return true;
+
+		return list;
 	}
-	
-	//读取军团变量对象
-	public boolean loadFactionValue() {
+
+	// 读取军团变量对象
+	public List<BinlogData> loadFactionValue() {
 		List<BinlogData> list = new LinkedList<>();
 		this.loadDataSet(ObjectType.FACTION_BINLOG_OWNER_STRING, list);
-		
-		LoginObjectManager.INSTANCE.putObjects(this.channel, ObjectType.FACTION_BINLOG_OWNER_STRING, list);
+
 		for (BinlogData obj : list) {
 			LoginObjectManager.INSTANCE.attachObject(obj);
 		}
-		return true;
+		return list;
 	}
 
 }

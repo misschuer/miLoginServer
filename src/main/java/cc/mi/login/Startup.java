@@ -5,11 +5,20 @@ import cc.mi.core.net.ClientCore;
 import cc.mi.login.config.ServerConfig;
 import cc.mi.login.net.LoginHandler;
 import cc.mi.login.net.LoginToGateHandler;
+import cc.mi.login.server.LoginCache;
 
 public class Startup {
 	static final CustomLogger logger = CustomLogger.getLogger(Startup.class);
 	private static void start() throws NumberFormatException, Exception {
 		ServerConfig.loadConfig();
+		
+		// 获取账号信息
+		LoginCache.INSTANCE.loadAllAccountInfo();
+		// 获取账号对应角色信息
+		LoginCache.INSTANCE.loadAllAccountCharInfo();
+		// 获取玩家名称信息
+		LoginCache.INSTANCE.loadAllCharName();
+		
 		new Thread(new Runnable() {
 			@Override
 			public void run() {

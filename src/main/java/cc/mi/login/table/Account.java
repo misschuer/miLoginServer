@@ -1,49 +1,31 @@
 package cc.mi.login.table;
 
-import cc.mi.login.db.annotation.AutoIncrement;
-import cc.mi.login.db.annotation.Column;
-import cc.mi.login.db.annotation.Table;
-
-@Table(name="account", pks={"id"}, keys={"name"}, comment = "账号表")
-public class Account {
-	
-	@AutoIncrement
-	@Column(name="id", nullable = false, defaultValue="", comment = "序号自增id")
-	private int id;
-	
-	@Column(name="pid", nullable = false, defaultValue="", comment = "平台id")
+public class Account implements ContentParser {
+	// 平台id
 	private String pid;
 	
-	@Column(name="sid", nullable = false, defaultValue="", comment = "服务器id")
+	// 服务器id
 	private String sid;
 	
-	@Column(name="uid", nullable = false, defaultValue="", comment = "用户id")
+	// 玩家账号id
 	private String uid;
 	
-	@Column(name="name", nullable = false, defaultValue="", comment = "pid_sid_uid")
+	// 由 pid_sid_uid 组成
 	private String name;
 	
-	@Column(name="lastLoginIp", nullable = false, defaultValue="", comment = "最近一次登录ip")
+	// 最近一次登录ip
 	private String lastLoginIp;
 	
-	@Column(name="isFcm", nullable = false, defaultValue="", comment = "是否防沉迷")
+	// 是否防沉迷
 	private int isFcm;
 	
-	@Column(name="gmLv", nullable = false, defaultValue="", comment = "gm等级")
+	// gm等级
 	private int gmLv;
 	
-	@Column(name="platData", nullable = false, length = 200, defaultValue="", comment = "平台数据")
+	// 平台数据
 	private String platData;
 	
 	public Account() {}
-
-	public int getId() {
-		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
-	}
 
 	public String getPid() {
 		return pid;
@@ -107,5 +89,23 @@ public class Account {
 
 	public void setPlatData(String platData) {
 		this.platData = platData;
+	}
+
+	@Override
+	public void fromString(String str) {
+		String[] params = str.split(" ");
+		this.pid		= params[ 0 ];
+		this.sid		= params[ 1 ];
+		this.uid		= params[ 2 ];
+		this.name		= params[ 3 ];
+		this.lastLoginIp= params[ 4 ];
+		this.isFcm		= Integer.parseInt(params[ 5 ]);
+		this.gmLv		= Integer.parseInt(params[ 6 ]);
+		this.platData	= params[ 7 ];
+	}
+	
+	public String toString() {
+		return String.format("%s %s %s %s %s %d %d %s", 
+				this.pid, this.sid, this.uid, this.name, this.lastLoginIp, this.isFcm, this.gmLv, this.platData);
 	}
 }

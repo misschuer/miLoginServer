@@ -1,20 +1,26 @@
 package cc.mi.login.server;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
+import cc.mi.core.binlog.data.BinlogData;
+import cc.mi.core.callback.AbstractCallback;
 import cc.mi.core.constance.ObjectType;
 import cc.mi.core.constance.OperateConst;
+import cc.mi.core.generate.msg.SendCharInfo;
+import cc.mi.core.generate.stru.CharInfo;
 import cc.mi.core.log.CustomLogger;
 import cc.mi.core.packet.Packet;
 import cc.mi.core.server.ContextManager;
 import cc.mi.core.server.ServerContext;
 import cc.mi.core.server.SessionStatus;
+import cc.mi.login.table.Account;
 
 public class LoginContext extends ServerContext {
 	static final CustomLogger logger = CustomLogger.getLogger(LoginContext.class);
-//	private static final int MAX_PLAYER_COUNT = 2000;
-//	private static final Queue<Integer> sessionQueue = new LinkedList<>();
-//	
+	
 	private String account = null;
 	protected String fromServerName = null;
 	private LoginPlayer player = null;
@@ -25,7 +31,7 @@ public class LoginContext extends ServerContext {
 //	private String watcherGuid = "";		//观察者guid
 //	private String generalId = "";			//地图实例对应唯一id
 //	
-//	private List<GuidObject> tempList = new LinkedList<>();
+	private List<BinlogData> tempList = new LinkedList<>();
 //	
 	public LoginContext(int fd) {
 		super(fd);
@@ -38,10 +44,10 @@ public class LoginContext extends ServerContext {
 			return false;
 		}
 
-		String platId   = params.get("pid");
-		String serverId = params.get("sid");
-		String guid     = params.get("uid");
-		
+		String platId   = params.get("pid"); // 平台id
+		String serverId = params.get("sid"); // 服务器id
+		String username = params.get("uid"); // 玩家自己的账号
+
 //TODO:
 //		watcherGuid = querys.get("watcher");
 //		//是观察者
@@ -52,7 +58,7 @@ public class LoginContext extends ServerContext {
 //				return false;
 //		}
 		
-		this.account = String.format("%s_%s_%s", platId, serverId, guid);
+		this.account = String.format("%s_%s_%s", platId, serverId, username);
 		this.fromServerName = String.format("%s_%s", platId, serverId);
 		
 		// 验证通过
@@ -74,22 +80,24 @@ public class LoginContext extends ServerContext {
 			
 			return true;
 		}
+		
+		boolean isFCM = false;	//TODO: 要通过客户端传过来
+		String platData = "";	//TODO: 要通过客户端传过来
 		// 修改账号登录信息
-//		LoginDB.INSTANCE.modifyAccount(account, pid, sid, uid, isFCM, this.getRemoteIp(), platData, 0);
+		LoginDB.INSTANCE.modifyAccount(account, platId, serverId, username, isFCM, this.getRemoteIp(), platData, 0);
 
 		// 拉角色列表
-//		LoginDB.INSTANCE.getCharList(account, new AbstractCallback<CharInfo>() {
-//			@Override
-//			public void invoke(CharInfo obj) {
-//				List<CharInfo> chars = new ArrayList<>();
-//				if (obj != null) {
-//					chars.add(obj);
-//				}
-////				Call_chars_list(session->m_delegate_sendpkt, chars, faction_name.c_str(), queen_name.c_str(), icon);
-//			}
-//		});
-		
-		
+		LoginDB.INSTANCE.getCharList(account, new AbstractCallback<CharInfo>() {
+			@Override
+			public void invoke(CharInfo obj) {
+				List<CharInfo> chars = new ArrayList<>();
+				if (obj != null) {
+					chars.add(obj);
+				}
+				SendCharInfo sci = new SendCharInfo();
+				sci.setChars(chars);
+			}
+		});
 		
 		// 记录已经验证的号
 		ContextManager.putSession(account, this.getFd());
@@ -171,12 +179,12 @@ public class LoginContext extends ServerContext {
 //		return true;
 //	}
 //	
-//	/*检查名称*/
-//	public String checkNameAndGetRealName(String name) {
-//		//账号信息
-//		Account accountInfo = LoginCache.INSTANCE.getAccount(this.getAccount());
-//		////在创建角色的用户名中加入平台ID,服务器ID并且
-//		String charName = name;
+	/*检查名称*/
+	public String checkNameAndGetRealName(String name) {
+		//账号信息
+		Account accountInfo = LoginCache.INSTANCE.getAccount(this.getAccount());
+		////在创建角色的用户名中加入平台ID,服务器ID并且
+		String charName = name;
 //		//没加区服之前的校验
 //		short checkReslut = checkName1(charName);
 //		if(checkReslut != OperateConst.OPERATE_LOGIN_REASON_SUCCESS) {
@@ -188,12 +196,12 @@ public class LoginContext extends ServerContext {
 //			);
 //			return null;
 //		}
-//		////按照规则拼结用户名
-//		charName = accountInfo.getPid();
-//		charName += ',';
-//		charName += accountInfo.getSid();
-//		charName += ',';
-//		charName += name;
+		////按照规则拼结用户名
+		charName = accountInfo.getPid();
+		charName += ',';
+		charName += accountInfo.getSid();
+		charName += ',';
+		charName += name;
 //		//加了区服以后的校验
 //		checkReslut = checkName2(charName);
 //		if(checkReslut == OperateConst.OPERATE_LOGIN_REASON_DB_RESULT_ERROR) {
@@ -209,9 +217,9 @@ public class LoginContext extends ServerContext {
 //			);
 //			return null;
 //		}
-//		return charName;
-//	}
-//	
+		return charName;
+	}
+
 //	private short checkName1(String name) {
 ////TODO:		屏蔽字
 ////		if (Pingbi((char*)name.c_str()))
@@ -258,69 +266,7 @@ public class LoginContext extends ServerContext {
 //		return OperateConst.OPERATE_LOGIN_REASON_SUCCESS;
 //	}
 //	
-//	
-//	public static void pushSession(int fd) {
-//		sessionQueue.add(fd);
-//	}
-//	
-//	public static int getLoginPlayerCount() {
-//		int cnt = ContextManager.getLoginPlayers(new AbstractCallback<ServerContext>() {
-//			@Override
-//			public boolean isMatched(ServerContext obj) {
-//				if (obj.getStatus() == SessionStatus.STATUS_TRANSFER || obj.getStatus() == SessionStatus.STATUS_LOGGEDIN) {
-//					return true;
-//				}
-//				return false;
-//			}
-//		});
-//		return cnt;
-//	}
-//	
-//	public static void dealLoginQueue() {
-//		if (!LoginContext.sessionQueue.isEmpty()) {
-//			int loginCount = LoginContext.getLoginPlayerCount();
-//			int passCount = MAX_PLAYER_COUNT - loginCount;
-//			logger.debug(String.format("dealLoginQueue max %u , now %u, pass %u, queue %u", 
-//					MAX_PLAYER_COUNT, loginCount, passCount, sessionQueue.size()));
-//			
-//			// 先计算能正常登录的
-//			while (passCount > 0 && !sessionQueue.isEmpty()) {
-//				int fd = sessionQueue.poll();
-//				ServerContext context = ContextManager.getContext(fd);
-//				if (context == null) {
-//					continue;
-//				}
-//				
-//				if (context.getGuid().isEmpty()) {
-//					logger.debug(String.format("dealLoginQueue, guid empty, account %s", ((LoginContext)context).getAccount()));
-//					context.close(LoginSystemManager.getCenterChannel(), OperateConst.OPERATE_CLOSE_REASON_LOGDIN_ONE18, "");
-//					continue;
-//				}
-//				
-//				if (context.getStatus() == SessionStatus.STATUS_TRANSFER || 
-//					context.getStatus() == SessionStatus.STATUS_LOGGEDIN) {
-//					logger.debug(String.format("dealLoginQueue ,but status err, %s", context.getGuid()));
-//					continue;
-//				}
-//				LoginSystemManager.loginQueue.pushAction(context.getGuid(), context.getFd(), LoginActionEnum.CONTEXT_LOGIN_ACTION_LOGIN);
-//				passCount --;
-//			}
-//			
-//			Iterator<Integer> iter = sessionQueue.iterator();
-//			// 需要等待的
-//			for (int index = 0; iter.hasNext(); index ++) {
-//				int fd = iter.next();
-//				ServerContext context = ContextManager.getContext(fd);
-//				if (context == null) {
-//					iter.remove();
-//					index --;
-//					continue;
-//				}
-//				System.out.println(index);
-////TODO:				Call_login_queue_index(context->m_delegate_sendpkt, index);
-//			}
-//		}
-//	}
+	
 //	
 //	
 //	public void playerLoadData() {
@@ -498,21 +444,21 @@ public class LoginContext extends ServerContext {
 ////		ObjMgr.CallAddWatch(fd_, GLOBAL_RIGHT_FLOAT_GUID);
 //	}
 //
-//	public String getAccount() {
-//		return account;
-//	}
+	public String getAccount() {
+		return account;
+	}
 //
 //	public void setAccount(String account) {
 //		this.account = account;
 //	}
-//
-//	public LoginPlayer getPlayer() {
-//		return player;
-//	}
-//
-//	public void setPlayer(LoginPlayer player) {
-//		this.player = player;
-//	}
+
+	public LoginPlayer getPlayer() {
+		return player;
+	}
+
+	public void setPlayer(LoginPlayer player) {
+		this.player = player;
+	}
 //
 //	public boolean isFCM() {
 //		return isFCM;
@@ -553,10 +499,10 @@ public class LoginContext extends ServerContext {
 //	public void setGeneralId(String generalId) {
 //		this.generalId = generalId;
 //	}
-//
-//	public String getFromServerName() {
-//		return fromServerName;
-//	}
+
+	public String getFromServerName() {
+		return fromServerName;
+	}
 //
 //	public void setFromServerName(String fromServerName) {
 //		this.fromServerName = fromServerName;
@@ -564,14 +510,12 @@ public class LoginContext extends ServerContext {
 
 	@Override
 	protected void sendToGate(Packet coder) {
-		// TODO Auto-generated method stub
-		
+		LoginServerManager.getInstance().sendToGate(coder);
 	}
 
 	@Override
 	protected void sendToCenter(Packet coder) {
-		// TODO Auto-generated method stub
-		
+		LoginServerManager.getInstance().sendToCenter(coder);
 	}
 
 	@Override
@@ -583,5 +527,9 @@ public class LoginContext extends ServerContext {
 	@Override
 	public void closeSession(int type) {
 		LoginServerManager.getInstance().closeSession(this.getFd(), type);
+	}
+	
+	public void addTempBinlogDataToLogin(BinlogData binlogData) {
+		this.tempList.add(binlogData);
 	}
 }

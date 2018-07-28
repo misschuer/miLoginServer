@@ -1,19 +1,31 @@
 package cc.mi.login.handler;
 
+import cc.mi.core.constance.ObjectType;
+import cc.mi.core.constance.PlayerEnumFields;
+import cc.mi.core.generate.msg.CreateChar;
+import cc.mi.core.generate.stru.CharInfo;
 import cc.mi.core.handler.HandlerImpl;
 import cc.mi.core.packet.Packet;
+import cc.mi.core.server.ContextManager;
+import cc.mi.core.server.GuidManager;
 import cc.mi.core.server.ServerContext;
+import cc.mi.core.server.SessionStatus;
+import cc.mi.login.server.LoginCache;
+import cc.mi.login.server.LoginContext;
+import cc.mi.login.server.LoginPlayer;
+import cc.mi.login.server.LoginServerManager;
+import cc.mi.login.table.Account;
 import io.netty.channel.Channel;
 
 public class CreateCharHandler extends HandlerImpl {
 
 	@Override
 	public void handle(ServerContext player, Channel channel, Packet decoder) {
-		
-//		LoginContext context = (LoginContext)player;
-//		CreateChar coder = (CreateChar)decoder;
-//		
-//		//TODO: 等具体的配置
+		CreateChar createChar = (CreateChar)decoder;
+		int fd = createChar.getFD();
+		LoginContext context = (LoginContext)ContextManager.getContext(fd);
+	
+//		//TODO: 参数验证
 //		if (coder.getCharData().getGender() < 1 || coder.getCharData().getGender() > 6) {
 //			context.callOperationResult(
 //					LoginSystemManager.getCenterChannel(), 
@@ -23,49 +35,46 @@ public class CreateCharHandler extends HandlerImpl {
 //			);
 //			return;
 //		}
-//
-//		//账号信息
-//
-//		Account accountInfo = LoginCache.INSTANCE.getAccount(context.getAccount());
-//		
-//		String realName = context.checkNameAndGetRealName(coder.getCharData().getName());
-//		if ("".equals(realName)) {
-//			return;
-//		}
-//		
-//		String guid = GuidManager.INSTANCE.makeNewGuid(ObjectType.PLAYER, context.getFromServerName());
-//		LoginPlayer newPlayer = new LoginPlayer(PlayerEnumFields.PLAYER_INT_FIELDS_SIZE, PlayerEnumFields.PLAYER_STR_FIELDS_SIZE);
-//		newPlayer.setGuid(guid);
-//		newPlayer.setOwner(guid);
-//		newPlayer.setAccount(context.getAccount());
-//		newPlayer.setCreateLoginIp(context.getRemoteIp());
-//		newPlayer.setPlatData(accountInfo.getPlatData());
-//		//初始化新角色属性
-//		newPlayer.initNewPlayer(realName, coder.getCharData().getGender(), accountInfo.getIsFcm() == 1);
-//		
-//		//记一下日志
-//		LoginCache.INSTANCE.addCharName(guid, realName);
-//		
+		
+		//账号信息
+		Account accountInfo = LoginCache.INSTANCE.getAccount(context.getAccount());	
+		// 名字验证
+		String realName = context.checkNameAndGetRealName(createChar.getCharData().getName());
+		if ("".equals(realName)) {
+			return;
+		}
+		String guid = GuidManager.INSTANCE.makeNewGuid(ObjectType.PLAYER, context.getFromServerName());
+		LoginPlayer newPlayer = new LoginPlayer(PlayerEnumFields.PLAYER_INT_FIELDS_SIZE, PlayerEnumFields.PLAYER_STR_FIELDS_SIZE);
+		newPlayer.setGuid(guid);
+		newPlayer.setOwner(guid);
+		newPlayer.setAccount(context.getAccount());
+		newPlayer.setCreateLoginIp(context.getRemoteIp());
+		newPlayer.setPlatData(accountInfo.getPlatData());
+		//初始化新角色属性
+		newPlayer.initNewPlayer(realName, createChar.getCharData().getModelId(), accountInfo.getIsFcm() == 1);
+		// 保存角色名字信息
+		LoginCache.INSTANCE.addCharNameAndSave(guid, realName);
+		//记一下日志
+		
 ////FIXME:			WriteCreateRole(m_account, new_player->GetGuid(), new_player->GetName().c_str(), m_remote_ip);
-//
-////			//腾讯日志
-////			if(LogindApp::g_app->GetPlatformID() == PLATFORM_QQ)
-////				WriteTXUserLog(m_account,new_player->GetGuid(), new_player->GetName().c_str(),1,GetPlatInfo(accountInfo->platdata,"pf"),(uint32)time(NULL));
-//		//这样才会存，不然永远不存
-//		newPlayer.setDbHashCode(newPlayer.hashCode());
-//
+		
+		//这样才会存，不然永远不存
+		newPlayer.setDbHashCode(newPlayer.hashCode());
 //		//保存新角色
-//		
-////			g_DAL.AddChars(new_player->GetGuid(), m_account, charName, m_remote_ip, data, data_str);
-//		LoginCache.INSTANCE.addAccountToChar(context.getAccount(), guid);
-//		LoginCache.INSTANCE.saveAccountCharInfo(context.getAccount(), guid);
+		CharInfo charInfo = new CharInfo();
+		charInfo.setAccountName(accountInfo.getName());
+		charInfo.setGuid(guid);
+		charInfo.setLevel(0);
+		charInfo.setModelId(createChar.getCharData().getModelId());
+		charInfo.setName(realName);
+		LoginCache.INSTANCE.addAccountToCharAndSave(accountInfo.getName(), charInfo);
+		// 记录日志
 ////			//g_LOG.AddHtBaiscInfo(new_player->GetGuid(), m_account, info->name, m_remote_ip);
-////
-////			//put到中心服，并回调
-////			m_temp_vec.push_back(new_player);
-//		context.setGuid(guid);
-//		context.setStatus(SessionStatus.STATUS_TRANSFER2);
-//		LoginContext.pushSession(context.getFd());
+////	
+		context.addTempBinlogDataToLogin(newPlayer);
+		context.setGuid(guid);
+		context.setStatus(SessionStatus.STATUS_TRANSFER2);
+		LoginServerManager.getInstance().pushSession(context.getFd());
 	}
 
 }

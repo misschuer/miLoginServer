@@ -24,6 +24,10 @@ public class CheckSessionHandler extends HandlerImpl {
 		
 		// 解析packet.getSessionkey()
 		Map<String, String> params = new HashMap<String, String>();
+		params.put("pid", "1");
+		params.put("sid", "1");
+		params.put("uid", "test");
+		
 		
 		// 判断重复checksession
 		LoginContext loginContext = (LoginContext) ContextManager.getContext(fd);

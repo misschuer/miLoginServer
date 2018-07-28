@@ -19,8 +19,12 @@ public class ServerConfig {
 	private static final String PLAYER_DATA_PATH = "playerDataPath";
 	public static final String WANNENG_LOGIN_KEY = "dc829703a6039ff5262ec2d0d520444a";
 	
+	public static final String MAX_PLAYER_COUNT = "maxPlayerCount";
+	
+	
 	private static String loginKey;
 	private static String center_ip;
+	private static int maxPlayerCount;
 	private static int center_port;
 	private static String gate_ip;
 	private static int gate_port;
@@ -40,6 +44,7 @@ public class ServerConfig {
         	loginKey = section.get(LOGIN_KEY);
         	checkSessionKeyTime = "TRUE".equals(section.get(CHECK_SESSIONKEY_TIME));
         	HDD_DATA_PATH = section.get(PLAYER_DATA_PATH);
+        	maxPlayerCount = Integer.parseInt(section.get(MAX_PLAYER_COUNT));
         	
         	Section section2 = ini.get(CENTER);
         	center_ip = section2.get(NetConst.IP);
@@ -80,5 +85,9 @@ public class ServerConfig {
 
 	public static String getHddDataPath() {
 		return HDD_DATA_PATH;
+	}
+
+	public static int getMaxPlayerCount() {
+		return maxPlayerCount;
 	}
 }

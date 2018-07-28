@@ -32,8 +32,6 @@ public class LoginPlayer extends PlayerBase {
 		this.relocate(bornX, bornY, BORN_OR);
 
 //		SetDouble(PLAYER_FIELD_MOVESPEED, INIT_MOVE_SPEED);			//移动速度
-//		//到lua初始化玩家属性
-//		DoSetNewPlayerInfo(this);
 //
 //		//防沉迷
 //		SetFCMLoginTime(is_FCM ? 0 : -1);

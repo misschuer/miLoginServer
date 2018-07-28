@@ -1,21 +1,14 @@
 package cc.mi.login.server;
 
-import org.apache.log4j.Logger;
-
 import cc.mi.core.callback.Callback;
-import cc.mi.core.task.base.AbstractAsyncTask;
-import cc.mi.login.async.AsyncOperate;
-import cc.mi.login.db.utils.DBUtils;
-import cc.mi.login.module.CharInfo;
+import cc.mi.core.generate.stru.CharInfo;
+import cc.mi.core.log.CustomLogger;
 import cc.mi.login.table.Account;
-import cc.mi.login.table.Chars;
 
 public enum LoginDB {
 	INSTANCE;
 	
-	private static final Logger logger = Logger.getLogger(LoginDB.class);
-	
-	private boolean isLocalDbIntegrated = false;
+	static final CustomLogger logger = CustomLogger.getLogger(LoginDB.class);
 	
 	private LoginDB() {}
 	
@@ -33,7 +26,7 @@ public enum LoginDB {
 		//验证是否变化,则更新
 		boolean hasChanged = false;
 		//尝试从本地缓存取
-		Account info = LoginServerManager.getInstance().getCache().getAccount(account);
+		Account info = LoginCache.INSTANCE.getAccount(account);
 		
 		//创建一个新的帐户信息指针	
 		if (info == null) {
@@ -47,7 +40,7 @@ public enum LoginDB {
 			info.setPlatData(platData);
 			info.setIsFcm(fcm);
 			
-			LoginServerManager.getInstance().getCache().addAccountAndSave(info);
+			LoginCache.INSTANCE.addAccountAndSave(info);
 			hasChanged = true;
 		}
 		
@@ -101,33 +94,10 @@ public enum LoginDB {
 	
 	//根据帐号获取角色列表
 	public void getCharList(final String account, Callback<CharInfo> callback) {
-		logger.info(String.format("account %s get char list", account));
-
-		CharInfo info = LoginServerManager.getInstance().getCache().getCharInfo(account);
-
-		//如果本地是完整库根本不需要再次去读数据库
-		if (!this.isLocalDbIntegrated && info == null) {
-			AsyncOperate.INSTANCE.submitTask(
-				new AbstractAsyncTask<CharInfo>(callback) {
-					@Override
-					protected void doTask(Callback<CharInfo> callback) {
-						Chars chars = DBUtils.fecthOne(Chars.class, "account", account);
-						CharInfo info = null;
-						if (chars != null) {
-							info = new CharInfo();
-							info.setGuid(chars.getGuid());
-							info.setName(chars.getName());
-							// 如果有属性可以再加
-							LoginServerManager.getInstance().getCache().addAccountToChar(account, info);
-							LoginServerManager.getInstance().getCache().saveAccountCharInfo(account, chars.getGuid());
-						}
-						callback.invoke(info);
-					}
-				}
-			);
-		} else {
-			callback.invoke(info);
-		}
+		logger.devLog("account {} get char list", account);
+		
+		CharInfo info = LoginCache.INSTANCE.getCharInfo(account);
+		callback.invoke(info);
 	}
 
 	public String getServerNameFromCharName(String name) {
@@ -145,7 +115,7 @@ public enum LoginDB {
 		serverName += '_';
 
 		//第二个逗号存着sid
-		int pos2 = name.indexOf(',', pos+1);//跳过,
+		int pos2 = name.indexOf(',', pos+1);
 		if(pos2 == -1) {
 			return "";
 		}

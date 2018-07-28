@@ -12,6 +12,11 @@ import cc.mi.core.server.ServerContext;
 import cc.mi.login.config.ServerConfig;
 import io.netty.channel.Channel;
 
+/**
+ * this is demo
+ * @author gy
+ *
+ */
 public class GetSessionHandler extends HandlerImpl {
 
 	@Override
