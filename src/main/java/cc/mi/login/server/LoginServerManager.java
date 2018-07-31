@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import cc.mi.core.binlog.data.BinlogData;
 import cc.mi.core.callback.AbstractCallback;
+import cc.mi.core.callback.Callback;
 import cc.mi.core.constance.IdentityConst;
 import cc.mi.core.constance.LoginActionEnum;
 import cc.mi.core.constance.ObjectType;
@@ -113,6 +114,14 @@ public class LoginServerManager extends ServerManager {
 		this.dealPacket();
 	}
 	
+	public void putObjects(String ownerId, final List<BinlogData> result, AbstractCallback<Boolean> abstractCallback) {
+		LoginObjectManager.INSTANCE.putObjects(this.centerChannel, ownerId, result, abstractCallback);
+	}
+	
+	public void putObject(String ownerId, BinlogData result, Callback<Boolean> callback) {
+		LoginObjectManager.INSTANCE.putObject(this.centerChannel, ownerId, result, callback);
+	}
+	
 	private void loadServerValue() {
 		if (this.centerChannel == null) {
 			return;
@@ -121,10 +130,10 @@ public class LoginServerManager extends ServerManager {
 		logger.devLog("load global value");
 		
 		List<BinlogData> globalList = LoginCache.INSTANCE.loadGlobalValue();
-		LoginObjectManager.INSTANCE.putObjects(this.centerChannel, ObjectType.GLOBAL_VALUE_OWNER_STRING, globalList);
+		this.putObjects(ObjectType.GLOBAL_VALUE_OWNER_STRING, globalList, null);
 		
 		List<BinlogData> factionList = LoginCache.INSTANCE.loadFactionValue();
-		LoginObjectManager.INSTANCE.putObjects(this.centerChannel, ObjectType.FACTION_BINLOG_OWNER_STRING, factionList);
+		this.putObjects(ObjectType.FACTION_BINLOG_OWNER_STRING, factionList, null);
 		
 		this.onDataReady();
 	}

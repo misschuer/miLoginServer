@@ -267,183 +267,192 @@ public class LoginContext extends ServerContext {
 //	}
 //	
 	
-//	
-//	
-//	public void playerLoadData() {
-//		this.setStatus(SessionStatus.STATUS_TRANSFER);
-//		tempList.clear();
-//		//先从硬盘load，没有再从数据库load
-//		if (LoginObjectManager.INSTANCE.loadPlayer(this.getGuid(), tempList) != null
-//			|| LoginCache.INSTANCE.loadHddPlayer(this.getGuid(), tempList) != null) {
-//			
-//			LoginCache.INSTANCE.delLogoutPlayer(this.getGuid());
-//			this.setStatus(SessionStatus.STATUS_TRANSFER2);
-//			return;
-//		}
+	
+	public void playerLoadData() {
+		this.setStatus(SessionStatus.STATUS_TRANSFER);
+		tempList.clear();
+		//先从硬盘load，没有再从数据库load
+		if (LoginObjectManager.INSTANCE.loadPlayer(this.getGuid(), tempList) != null
+			|| LoginCache.INSTANCE.loadHddPlayer(this.getGuid(), tempList) != null) {
+			
+			LoginCache.INSTANCE.delLogoutPlayer(this.getGuid());
+			this.setStatus(SessionStatus.STATUS_TRANSFER2);
+			return;
+		}
+
+		logger.errorLog("playerLoadData error no data exist");
+	}
+	
+	public void putData() {
+		final String guid = this.getGuid();
+		final int fd = this.getFd();
+		//缓存里有，不用put了
+		if (LoginObjectManager.INSTANCE.get(guid) != null) {
+			this.setStatus(SessionStatus.STATUS_PUT_OK);
+			return;
+		}
+		
+		//到这里就不是缓存里取得玩家了
+		//向中心服提交玩家对象
+		this.setStatus(SessionStatus.STATUS_PUT);
+		final LoginContext self = this;
+		LoginServerManager.getInstance().putObjects(this.getGuid(), this.tempList, new AbstractCallback<Boolean>() {
+			@Override
+			public void invoke(Boolean value) {
+				LoginContext context = (LoginContext)ContextManager.getContext(fd);
+				if(!value) {
+					logger.devLog("player login call puts fail {}, fd {}", guid, fd);
+					if(context != null) {
+						context.closeSession(OperateConst.OPERATE_CLOSE_REASON_LOGDIN_ONE54);
+					}
+					return;
+				}
+				// 向中心服添加观察对象
+				LoginServerManager.getInstance().addTagWatchAndCall(guid);
+
+				if(context == null) {
+					logger.devLog("player login call puts ok, but logout, {} {}", guid, fd);
+					return;
+				}
+
+				logger.devLog("LogindContext::Login player login call puts ok, {} {}", guid, fd);
+				self.setStatus(SessionStatus.STATUS_PUT_OK);
+			}
+		});
+	}
+	
+	public void loginOK() {
+		logger.devLog("LogindContext::LoginOK player {}, fd {}", this.getGuid(), this.getFd());
+		LoginPlayer player = LoginObjectManager.INSTANCE.findPlayer(this.getGuid());
+
+// TODO: 一些数据的处理
+//		if(!IsKuafuPlayer())
+//		{
+//			//初始化一下数据
+//			if(!p->InitDatabase())
+//			{
+//				tea_perror("LogindContext::Login player guid ==  %s,not InitDatabase ", m_lguid.c_str());
+//				Close(PLAYER_CLOSE_OPERTE_LOGDIN_ONE9,"");
+//				return ;
+//			}
 //
-//		logger.error("playerLoadData error no data exist");
-//	}
-//	
-//	public void putData() {
-//		final String guid = this.getGuid();
-//		final int fd = this.getFd();
-//		//缓存里有，不用put了
-//		if (LoginObjectManager.INSTANCE.get(guid) != null) {
-//			this.setStatus(SessionStatus.STATUS_PUT_OK);
-//			return;
+//			//看看有没有玩家数据需要修复或者升级的
+//			bool repait_data = false;
+//			DoRepairPlayerData(m_account, m_temp_vec, repait_data);
+//			if(!repait_data)
+//			{
+//				tea_pinfo("repair player account %s  %s  err, ", m_account.c_str(), m_lguid.c_str());
+//				Close(PLAYER_CLOSE_OPERTE_LOGDIN_ONE10,"");
+//				return;
+//
+//			}
 //		}
-//		//到这里就不是缓存里取得玩家了
-//		//向中心服提交玩家对象
-//		this.setStatus(SessionStatus.STATUS_PUT);
+
+		//关联m_player
+		this.setPlayer(player);
+		// 这个是否可能会引起类循环引用
+//		m_player->SetSession(this);
+
+		//跨服的玩家
+//		if(IsKuafuPlayer())
+		boolean isKuafu = false;
+		if (isKuafu) {	
+//			m_player->SaveDBKuafuInfo(m_warid, m_kuafutype, (uint16)m_number, m_backsvrname);
+		}
+		else
+		{	
+			//情况跨服信息
+//			m_player->ClearDBKuafuInfo();
+
+			//重设账号信息
+//			Account accountInfo = LoginCache.INSTANCE.getAccount(account);
+
+//			//重新刷新一下防沉迷的信息
+//			if(m_bHasfcm && !accountInfo->is_FCM)
+//				m_player->SetFCMLoginTime(-1);
+//			//从非防沉迷到防沉迷的
+//			else if(m_bHasfcm && accountInfo->is_FCM && m_player->GetFCMLoginTime() == (uint32)-1)
+//				m_player->SetFCMLoginTime(0);
+//			//计算处理防沉迷相关时间
+//			m_player->CalculFCMLogoutTime();	
+			//设置一下RMB充值等级
+//			m_player->GetSession()->SetPayLevel();	
+//			if(m_bHasplatdata && m_player->GetPlatData() != accountInfo->platdata)
+//				m_player->SetPlatData(accountInfo->platdata);
+//			if(g_Config.gm_open)
+//				m_player->SetGmNum(3);
+
+			//设置下是否托管
+//			if(m_player->GetFlags(PLAYER_APPD_INT_FIELD_FLAGS_IS_HOSTING_LOGIN) != m_is_hosting)
+//			{
+//				if(m_is_hosting)
+//					m_player->SetFlags(PLAYER_APPD_INT_FIELD_FLAGS_IS_HOSTING_LOGIN);
+//				else
+//					m_player->UnSetFlags(PLAYER_APPD_INT_FIELD_FLAGS_IS_HOSTING_LOGIN);
+//			}
+
+			//设置页游手游在线情况
+//			if (!m_player->GetFlags(PLAYER_APPD_INT_FIELD_FLAGS_YEYOU_ONLINE))
+//				m_player->SetFlags(PLAYER_APPD_INT_FIELD_FLAGS_YEYOU_ONLINE);
+
+//			bool is_phone_online = MobileContext::FindSessionID(m_account) != 0 ? true: false;
+//			if (is_phone_online)
+//			{//手游在线
+//				if (!m_player->GetFlags(PLAYER_APPD_INT_FIELD_FLAGS_PHONE_ONLINE))
+//					m_player->SetFlags(PLAYER_APPD_INT_FIELD_FLAGS_PHONE_ONLINE);
+//			}
+//			else
+//			{//手游不在线
+//				if (m_player->GetFlags(PLAYER_APPD_INT_FIELD_FLAGS_PHONE_ONLINE))
+//					m_player->UnSetFlags(PLAYER_APPD_INT_FIELD_FLAGS_PHONE_ONLINE);
+//			}
+		}
+
+		//通知其他服务器为该玩家建立会话信息	
+		this.noticeOtherInnerServerToCreateConnection();
+		
+		//客户端对玩家对象的监听(由于客户端的先后顺序 玩家数据先发)
+		LoginServerManager.getInstance().addTagWatchAndCall(this.getFd(), this.getGuid());
+
+		//登录完成，准备传送	
+//		MapMgr->PlayerLogin(m_player);
+		//登录完毕，状态置一下
+		this.setStatus(SessionStatus.STATUS_LOGGEDIN);
+
+		//发个登录登录服完毕的包给客户端
+//		Call_join_or_leave_server(m_delegate_sendpkt, 0, SERVER_TYPE_LOGIND, getpid(), LogindApp::g_app->Get_Connection_ID(), uint32(time(nullptr)));
+
+		//保存一下登录记录
+//		SavePlayerLoginLog();
+
+		//监听帮派的
+//		string factionId = p->GetFactionId();
+//		if (!factionId.empty()) {
+//			ObjMgr.CallAddWatch(fd_, factionId);
+//		}
+
+		//发送世界变量
+//		ObjMgr.CallAddWatch(fd_, GLOBAL_OBJ_GUID);
+//		ObjMgr.CallAddWatch(fd_, GLOBAL_GAME_CONFIG);
+//		ObjMgr.CallAddWatch(fd_, GLOBAL_RIGHT_FLOAT_GUID);
+	}
+
+	private void noticeOtherInnerServerToCreateConnection() {
+		if (this.player == null) {
+			return;
+		}
+
+//		WorldPacket pkt(INTERNAL_OPT_PLAYER_LOGIN);
+//		pkt << fd_ << m_player->GetGuid() << uint8(CONTEXT_TYPE_YEYOU);
 //		
-////		ObjMgr.CallPutsObject(guid, m_temp_vec, [this, fd, guid, temp_vec](bool b){
-////			if(!b)
-////			{
-////				tea_pdebug("player login call puts fail %s, fd %u", guid.c_str(), fd);
-////				LogindContext *session = LogindContext::FindContext(fd);
-////				if(session)
-////					session->Close(PLAYER_CLOSE_OPERTE_LOGDIN_ONE54,"");
-////				return;
-////			}
-////			//把binlog的拥有者管理器弄一下
-////			for (auto it:temp_vec)
-////			{
-////				//todo jzy  这一句，是为了糊datad版本不兼容的问题
-////				ObjMgr.CallAddWatch(it, nullptr, false);
-////				ObjMgr.InsertObjOwner(it);
-////			}
-////
-////			LogindContext *session = LogindContext::FindContext(fd);
-////			if(!session)
-////			{
-////				tea_pdebug("player login call puts ok, but logout, %s %u", guid.c_str(), fd);
-////				return;
-////			}
-////
-////			tea_pdebug("LogindContext::Login player login call puts ok, %s %u", guid.c_str(), fd);
-////			SetStatus(STATUS_PUT_OK);
-////		});
-//	}
-//	
-//	public void loginOK() {
-////		tea_pdebug("LogindContext::LoginOK player %s, fd %u", m_lguid.c_str(), GetFD());
-////		logind_player *p = ObjMgr.FindPlayer(m_lguid);
-////		ASSERT(p);
-////		if(!IsKuafuPlayer())
-////		{
-////			//初始化一下数据
-////			if(!p->InitDatabase())
-////			{
-////				tea_perror("LogindContext::Login player guid ==  %s,not InitDatabase ", m_lguid.c_str());
-////				Close(PLAYER_CLOSE_OPERTE_LOGDIN_ONE9,"");
-////				return ;
-////			}
-////
-////			//看看有没有玩家数据需要修复或者升级的
-////			bool repait_data = false;
-////			DoRepairPlayerData(m_account, m_temp_vec, repait_data);
-////			if(!repait_data)
-////			{
-////				tea_pinfo("repair player account %s  %s  err, ", m_account.c_str(), m_lguid.c_str());
-////				Close(PLAYER_CLOSE_OPERTE_LOGDIN_ONE10,"");
-////				return;
-////
-////			}
-////		}
-////
-////		//关联m_player
-////		if(!SetPlayer(p))
-////			return;
-////
-////		m_player->SetSession(this);
-////		ASSERT(m_player);
-////
-////		//跨服的玩家
-////		if(IsKuafuPlayer())
-////		{	
-////			m_player->SaveDBKuafuInfo(m_warid, m_kuafutype, (uint16)m_number, m_backsvrname);
-////		}
-////		else
-////		{	
-////			//情况跨服信息
-////			m_player->ClearDBKuafuInfo();
-////
-////			//重设账号信息
-////			account_table * accountInfo = g_Cache.GetAccount(m_account);
-////			ASSERT(accountInfo);
-////
-////			//重新刷新一下防沉迷的信息
-////			if(m_bHasfcm && !accountInfo->is_FCM)
-////				m_player->SetFCMLoginTime(-1);
-////			//从非防沉迷到防沉迷的
-////			else if(m_bHasfcm && accountInfo->is_FCM && m_player->GetFCMLoginTime() == (uint32)-1)
-////				m_player->SetFCMLoginTime(0);
-////			//计算处理防沉迷相关时间
-////			m_player->CalculFCMLogoutTime();	
-////			//设置一下RMB充值等级
-////			m_player->GetSession()->SetPayLevel();	
-////			if(m_bHasplatdata && m_player->GetPlatData() != accountInfo->platdata)
-////				m_player->SetPlatData(accountInfo->platdata);
-////			if(g_Config.gm_open)
-////				m_player->SetGmNum(3);
-////			
-////
-////			//设置下是否托管
-////			if(m_player->GetFlags(PLAYER_APPD_INT_FIELD_FLAGS_IS_HOSTING_LOGIN) != m_is_hosting)
-////			{
-////				if(m_is_hosting)
-////					m_player->SetFlags(PLAYER_APPD_INT_FIELD_FLAGS_IS_HOSTING_LOGIN);
-////				else
-////					m_player->UnSetFlags(PLAYER_APPD_INT_FIELD_FLAGS_IS_HOSTING_LOGIN);
-////			}
-////
-////			//设置页游手游在线情况
-////			if (!m_player->GetFlags(PLAYER_APPD_INT_FIELD_FLAGS_YEYOU_ONLINE))
-////				m_player->SetFlags(PLAYER_APPD_INT_FIELD_FLAGS_YEYOU_ONLINE);
-////
-////			bool is_phone_online = MobileContext::FindSessionID(m_account) != 0 ? true: false;
-////			if (is_phone_online)
-////			{//手游在线
-////				if (!m_player->GetFlags(PLAYER_APPD_INT_FIELD_FLAGS_PHONE_ONLINE))
-////					m_player->SetFlags(PLAYER_APPD_INT_FIELD_FLAGS_PHONE_ONLINE);
-////			}
-////			else
-////			{//手游不在线
-////				if (m_player->GetFlags(PLAYER_APPD_INT_FIELD_FLAGS_PHONE_ONLINE))
-////					m_player->UnSetFlags(PLAYER_APPD_INT_FIELD_FLAGS_PHONE_ONLINE);
-////			}
-////		}
-////
-////		//通知其他服务器为该玩家建立会话信息	
-////		Call_Create_Connection();
-////		
-////		//客户端对玩家对象的监听(由于客户端的先后顺序 玩家数据先发)
-////		ObjMgr.CallAddTagWatch(fd_, m_lguid);
-////
-////		string factionId = p->GetFactionId();
-////
-////		//登录完成，准备传送	
-////		MapMgr->PlayerLogin(m_player);
-////		//登录完毕，状态置一下
-////		SetStatus(STATUS_LOGGEDIN);
-////
-////		//发个登录登录服完毕的包给客户端
-////		Call_join_or_leave_server(m_delegate_sendpkt, 0, SERVER_TYPE_LOGIND, getpid(), LogindApp::g_app->Get_Connection_ID(), uint32(time(nullptr)));
-////
-////		//保存一下登录记录
-////		SavePlayerLoginLog();
-////
-////		//监听帮派的
-////		if (!factionId.empty()) {
-////			ObjMgr.CallAddWatch(fd_, factionId);
-////		}
-////
-////		//发送世界变量
-////		ObjMgr.CallAddWatch(fd_, GLOBAL_OBJ_GUID);
-////		ObjMgr.CallAddWatch(fd_, GLOBAL_GAME_CONFIG);
-////		ObjMgr.CallAddWatch(fd_, GLOBAL_RIGHT_FLOAT_GUID);
-//	}
-//
+//		//通知中心服建立连接
+//		LogindApp::g_app->SendToCentd(pkt);
+//		//通知应用服建立连接
+//		LogindApp::g_app->SendToAppd(pkt);
+//		//通知日志服建立连接
+//		LogindApp::g_app->SendToPoliced(pkt);
+	}
+	
 	public String getAccount() {
 		return account;
 	}

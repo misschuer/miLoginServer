@@ -20,12 +20,16 @@ public class LoginObjectManager extends ServerObjectManager  {
 			return null;
 		}
 
-//		for (BinlogData obj : result) {
-//			if (obj.getGuid() == guid) {
-//				return (LoginPlayer)obj;
-//			}
-//		}
+		for (BinlogData obj : result) {
+			if (obj.getGuid() == guid) {
+				return (LoginPlayer)obj;
+			}
+		}
 		
 		return null;
+	}
+	
+	public LoginPlayer findPlayer(String guid) {
+		return (LoginPlayer)this.get(guid);
 	}
 }
