@@ -30,9 +30,14 @@ public class LoginContext extends ServerContext {
 //	
 //	private String watcherGuid = "";		//观察者guid
 //	private String generalId = "";			//地图实例对应唯一id
-//	
+	
+	private int teleMapId;
+	private int teleInstId;
+	private String teleExt;
+	private int teleLineNo;
+	
 	private List<BinlogData> tempList = new LinkedList<>();
-//	
+
 	public LoginContext(int fd) {
 		super(fd);
 	}
@@ -414,7 +419,8 @@ public class LoginContext extends ServerContext {
 		//客户端对玩家对象的监听(由于客户端的先后顺序 玩家数据先发)
 		LoginServerManager.getInstance().addTagWatchAndCall(this.getFd(), this.getGuid());
 
-		//登录完成，准备传送	
+		//登录完成，准备传送
+//		LoginMapManager.INSTANCE
 //		MapMgr->PlayerLogin(m_player);
 		//登录完毕，状态置一下
 		this.setStatus(SessionStatus.STATUS_LOGGEDIN);
@@ -540,5 +546,37 @@ public class LoginContext extends ServerContext {
 	
 	public void addTempBinlogDataToLogin(BinlogData binlogData) {
 		this.tempList.add(binlogData);
+	}
+
+	public int getTeleMapId() {
+		return teleMapId;
+	}
+
+	public void setTeleMapId(int teleMapId) {
+		this.teleMapId = teleMapId;
+	}
+
+	public int getTeleInstId() {
+		return teleInstId;
+	}
+
+	public void setTeleInstId(int teleInstId) {
+		this.teleInstId = teleInstId;
+	}
+
+	public String getTeleExt() {
+		return teleExt;
+	}
+
+	public void setTeleExt(String teleExt) {
+		this.teleExt = teleExt;
+	}
+
+	public int getTeleLineNo() {
+		return teleLineNo;
+	}
+
+	public void setTeleLineNo(int teleLineNo) {
+		this.teleLineNo = teleLineNo;
 	}
 }
