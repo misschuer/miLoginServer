@@ -3,7 +3,10 @@ package cc.mi.login.server;
 import java.util.HashMap;
 import java.util.Map;
 
+import cc.mi.core.algorithm.IndexTree;
+import cc.mi.core.constance.ObjectType;
 import cc.mi.core.log.CustomLogger;
+import cc.mi.core.server.GuidManager;
 import cc.mi.core.server.SessionStatus;
 import cc.mi.core.xlsxData.MapTemplate;
 import cc.mi.login.table.MapInstInfo;
@@ -22,7 +25,11 @@ public enum LoginMapManager {
 	private int sceneCnt;
 	
 	private final Map<String, PlayerInstInfo> playerInstInfoHash = new HashMap<>();
+	// 地图实例信息
 	private final Map<Integer, MapInstInfo> mapInstInfoHash = new HashMap<>();
+	// 地图下标索引信息
+	private final IndexTree indexTree = new IndexTree(5000);
+	
 	private LoginMapManager() {}
 	
 	
@@ -117,7 +124,7 @@ public enum LoginMapManager {
 		}
 
 		//加入地图并返回到新实例
-		playerJoin(player);
+		playerJoin(context);
 		logger.devLog("teleportTo end");
 	}
 //
@@ -194,9 +201,8 @@ public enum LoginMapManager {
 //		//加入地图
 //		Call_Join_Map(index, player);	
 //	}
-//
-//	int32 MapManager::DelPlayer(logind_player *player)
-//	{
+
+	private int delPlayer(LoginPlayer player) {
 //		//由于存在网络同步问题，所以不信任玩家身上的instanceid
 //		int32 index = ForEach([&](uint32 index){
 //			uint32 instance_id = GetInstanceID(index);
@@ -248,45 +254,41 @@ public enum LoginMapManager {
 //			});
 //		}
 //		return index;
-//	}
+		return -1;
+	}
 
-	private boolean playerJoin(LoginPlayer player) {
+	private boolean playerJoin(LoginContext context) {
 		
-//		uint32 mapid = player->GetTeleportMapID();
-//		uint32 instanceid = player->GetSession()->to_instanceid;
-//		uint32 lineno = player->GetTeleportLineNo();
-//		tea_pdebug("player %s join map %u begin, instanceid %u, lineno %u", player->GetGuid().c_str(), mapid, instanceid, lineno);
-//		const MapTemplate *mt = MapTemplate::GetMapTempalte(mapid);	
-//		ASSERT(mt);		//传送心跳里已经验证过了，这里要是找不到就直接断言吧
-//		mt = MapTemplate::GetMapTempalte(mt->GetParentMapid());
-//		if (!mt)
-//		{
-//			tea_perror("player %s join map %u, Parent MapTemplate not find", player->GetGuid().c_str(), mapid);
-//			return false;
-//		}
-//		
-//		int32 index = 0;
-//		if(instanceid)
-//			index = findInstance(instanceid);				//如果是加入已有实例
-//		else
-//			index = HandleGetInstance(player, mt, lineno, mapid);
-//
-//		if (index >= 0)
-//		{
-//			//旧实例删除对象
-//			DelPlayer(player);
+		LoginPlayer player = context.getPlayer();
+		int mapId  = player.getTeleportMapID();
+		int instId = context.getTeleInstId();
+		int lineNo = player.getTeleportLineNo();
+		logger.devLog("player {} join map {} begin, instanceid {}, lineno {}", player.getGuid(), mapId, instId, lineNo);
+		
+		MapTemplate mt = MapTemplate.getTemplate(mapId);
+		if (mt == null || !MapTemplate.containsTemplate(mapId)) {
+			logger.devLog("player {} join map {}, Parent MapTemplate not find", player.getGuid(), mapId);
+			return false;
+		}
+		
+		int index = 0;
+		if (instId > 0) {
+			index = this.findInstance(instId);				//如果是加入已有实例
+		} else {
+			index = this.HandleGetInstance(player, mt, lineNo, mapId);
+		}
+		
+		if (index > 0) {
+			//旧实例删除对象
+			this.delPlayer(player);
 //			AddPlayer(index, player);
-//			tea_pdebug("player %s join map %u end", player->GetGuid().c_str(), mapid);
-//			return true;
-//		}
-//		else
-//		{
-//			//创建实例失败
+			logger.devLog("player {} join map {} end", player.getGuid(), mapId);
+			return true;
+		}
+		//创建实例失败
 //			Call_operation_failed(player->GetSession()->m_delegate_sendpkt,OPRATE_TYPE_LOGIN,OPRATE_RESULT_SCENED_CLOSE,"");
 //			player->GetSession()->Close(PLAYER_CLOSE_OPERTE_LOGDIN_ONE22,"");
-//			tea_perror("player:%s teleport fail! mapid:%u,instid:%u,lineno:%u", player->GetGuid().c_str(), mapid, instanceid, lineno);
-//			return false;
-//		}
+		logger.devLog("player:{} teleport fail! mapid:{},instid:{},lineno:{}", player.getGuid(), mapId, instId, lineNo);
 		return false;
 	}
 	
@@ -417,86 +419,101 @@ public enum LoginMapManager {
 	private void delRecordInstance(LoginPlayer player) {
 		playerInstInfoHash.remove(player.getGuid());
 	}
-	
-//
-//	//根据地图模板的类型的副本类型进行控制
-//	int32 MapManager::HandleGetInstance(logind_player *player, const MapTemplate *mt,uint32 lineno, uint32 mapid)
-//	{
+
+	//根据地图模板的类型的副本类型进行控制
+	int HandleGetInstance(LoginPlayer player, MapTemplate mt, int lineNo, int mapId) {
+		
+		int instType = 0;
 //		uint16 inst_type = mt->GetMapBaseInfo().instance_type; //副本类型见枚举MapInstanceType
 //		uint32 parent_map = mt->GetParentMapid();
-//
-//		//判断一下传送ID
-//		bool need_general_id = false;
-//		DoIsNeedGeneralid(parent_map, need_general_id);
-//		if(need_general_id)
-//		{
-//			if(player->GetTeleportGuid().empty())
-//			{
-//				tea_pwarn("MapManager::HandleGetInstance player->GetTeleportGuid().empty() %s", player->guid().c_str());
-//				return -1;
-//			}
-//		}
-//
-//		//找不到就创建
-//		int32 index;
-//		string general_id;			//如果不需要generalid那就应该传空
-//		if (need_general_id)
-//			general_id = player->GetTeleportGuid();
-//		DoFindOrCreateMap(mapid, inst_type, general_id, lineno, index);
-//		return index;
-//	}
-//
-//	//创建新的地图实例
-//	int32 MapManager::CreateInstance(uint32 mapid, const string &general_id,uint32 lineno)
-//	{
-//		const MapTemplate *mt = MapTemplate::GetMapTempalte(mapid);
+		int parentMap = 1;
+
+		//判断一下传送ID
+		boolean needGeneral = this.isNeedGeneral(parentMap);
+		String ext = null;		//如果不需要generalid那就应该传空
+		if (needGeneral) {
+			ext = player.getTeleportExt();
+			if (ext == null || ext.isEmpty()) {
+				logger.devLog("HandleGetInstance teleport ext {} is empty", player.getTeleportExt());
+				return -1;
+			}
+		}
+
+		//找不到就创建
+		int index = findOrCreateMap(mapId, instType, ext, lineNo);
+		return index;
+	}
+	
+	private boolean isNeedGeneral(int mapId) {
+		//TODO:
+		return false;
+	}
+	
+	private void setMapInstanceInfo(int index, MapInstInfo mapInstInfo) {
+		this.mapInstInfoHash.put(index, mapInstInfo);
+	}
+	
+	private int findOrCreateMap(int mapId, int instType, String ext, int lineNo) {
+		
+//		if(inst_type == MAP_INST_TYP_SINGLETON)then	--单人副本
+		if (instType == 0) {
+			return this.createInstance(mapId, ext, lineNo);
+		}
+		
+//		--找一下真正该去的分线号
+//		local lineno_true = GetWantToLineno(mapid, lineno, general_id)
+//		
+//		--遍历实例查找该地图
+//		local result = findInstance(mapid, general_id, lineno_true)
+//		outFmtDebug("---------FindOrCreateMap %u %u '%s' %u result = %d", mapid, inst_type, general_id, lineno_true, result)
+//		if(result < 0)then
+//			result = createInstance(mapid, general_id, lineno_true)		--如果没有就创建一个新的实例
+//		end
+//		return result
+		return -1;
+	}
+
+	//创建新的地图实例
+	int createInstance(int mapId, String ext, int lineNo) {
+		
+		MapTemplate mt = MapTemplate.getTemplate(mapId);
+		int instType = 0;
 //		uint16 inst_typ = mt->GetMapBaseInfo().instance_type;
 //		uint32 parent_id = mt->GetParentMapid();
-//		//uint32 instance_id = GetNewInstanceID();
-//		uint32 instance_id = 0;
-//		uint32 conn = 0;
-//		if(parent_id != mapid)
-//		{
-//			int32 index = findInstance(parent_id, general_id, lineno);
-//			if(index < 0)
-//			{
-//				index = CreateInstance(parent_id, general_id, lineno);
-//			}
-//			ASSERT(index >= 0);
-//			instance_id = GetInstanceID(index);
-//			conn = GetScenedConn(findInstance(parent_id, general_id, lineno));
-//		}
-//		else
-//		{
-//			instance_id = GetNewInstanceID();
-//			conn = DoGetScenedFDByType(inst_typ, mapid);
-//		}
-//
-//		tea_pdebug("MapManager::CreateInstance inst_typ = %u, parent_id = %u, instance_id = %u, conn = %u begin"
-//			, inst_typ, parent_id, instance_id, conn);
-//		
-//		if (conn == 0)
-//		{
-//			tea_pdebug("MapManager::CreateInstance find scened fail, mapid %u, gengeral_id %s, lineno %u", mapid, general_id.c_str(), lineno);
-//			return -1;
-//		}
-//		
+		int parentId = 1;
+		
+		int instId = 0;
+		int conn = 0;
+		
+		if (parentId != mapId) {
+			int index = this.findInstance(parentId, ext, lineNo);
+			if(index < 0) {
+				index = this.createInstance(parentId, ext, lineNo);
+			}
+			instId = this.getInstanceID(index);
+			conn = this.getScenedConn(this.findInstance(mapId, ext, lineNo));
+		} else {
+			instId = this.getNewInstanceID();
+//TODO:			conn = DoGetScenedFDByType(inst_typ, mapid);
+			conn = 1;
+		}
+
+		logger.devLog("createInstance instType = {}, parentId = {}, instId = {}, conn = {} begin"
+			, instType, parentId, instId, conn);
+		
+		if (conn == 0) {
+			logger.devLog("createInstance find scened fail, mapid {}, gengeral_id {}, lineno {}", mapId, ext, lineNo);
+			return -1;
+		}
+		
 //		//开始增加地图信息
 //		//找个空位
-//		int32 result = ForEach([&](uint32 index){
-//			if(GetInstanceID(index) == 0)
-//			{
-//				SetMapInstanceInfo(index, instance_id, mapid, lineno, conn, general_id);
-//				return true;
-//			}
-//			return false;
-//		});
-//		//没找到空位，放到后面
-//		if(result < 0)
-//		{
-//			result = length_uint32() / MAX_MAP_INSTANCE_INT_TYPE;
-//			SetMapInstanceInfo(result, instance_id, mapid, lineno, conn, general_id);
-//		}
+		int result = this.indexTree.newIndex();
+		if (result < 0) {
+			throw new RuntimeException("mapinstinfo index < 0");
+		}
+		MapInstInfo mapInstInfo = new MapInstInfo(result, instId, parentId, lineNo, conn, ext);
+		this.setMapInstanceInfo(result, mapInstInfo);
 //		//创建该地图的玩家信息binlog
 //		const char *guid = GetInstancePlayerInfoID(instance_id);
 //		BinLogObject *blog = new BinLogObject(core_obj::SYNC_SLAVE | core_obj::SYNC_LOCAL);
@@ -516,10 +533,10 @@ public enum LoginMapManager {
 //			MapManager::lineCreated(mapid, lineno, instance_id);
 //		}
 //
-//		tea_pdebug("MapManager::CreateInstance end");
-//		return result;
-//	}
-//
+		logger.devLog("createInstance end");
+		return result;
+	}
+
 //	//关闭某一地图
 //	bool MapManager::TryClose(uint32 instance_id)
 //	{
@@ -617,6 +634,21 @@ public enum LoginMapManager {
 //		});
 //		
 //	}
+	
+	private int getScenedConn(int index) {
+		return 1;
+	}
+	
+	private int getNewInstanceID() {
+		return GuidManager.INSTANCE.newIndex(ObjectType.MAP);
+	}
+	
+	private int getInstanceID(int index) {
+		if (!mapInstInfoHash.containsKey(index)) {
+			return -1;
+		}
+		return mapInstInfoHash.get(index).getInstId();
+	}
 
 	//根据实例ID进行查找地图实例
 	private int findInstance(int instanceid) {
