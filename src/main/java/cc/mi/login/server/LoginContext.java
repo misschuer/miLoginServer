@@ -355,6 +355,7 @@ public class LoginContext extends ServerContext {
 
 		//关联m_player
 		this.setPlayer(player);
+		player.setFd(this.getFd());
 		// 这个是否可能会引起类循环引用
 //		m_player->SetSession(this);
 

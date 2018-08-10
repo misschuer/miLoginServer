@@ -11,6 +11,8 @@ public class LoginPlayer extends PlayerBase {
 	private static final int BORN_Y		= 113;	//出生坐标y
 	private static final int BORN_OR	= 2;	//出生朝向
 	private static final int BORN_LV	= 1;	//出生等级
+	
+	private int fd;
 
 	public LoginPlayer(int intMaxSize, int strMaxSize) {
 		super(intMaxSize, strMaxSize);
@@ -35,5 +37,13 @@ public class LoginPlayer extends PlayerBase {
 //
 //		//防沉迷
 //		SetFCMLoginTime(is_FCM ? 0 : -1);
+	}
+
+	public int getFd() {
+		return fd;
+	}
+
+	public void setFd(int fd) {
+		this.fd = fd;
 	}
 }

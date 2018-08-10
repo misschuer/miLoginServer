@@ -3,6 +3,7 @@ package cc.mi.login.server;
 import java.util.List;
 
 import cc.mi.core.binlog.data.BinlogData;
+import cc.mi.core.callback.Callback;
 import cc.mi.core.constance.IdentityConst;
 import cc.mi.core.server.ServerObjectManager;
 
@@ -31,5 +32,11 @@ public class LoginObjectManager extends ServerObjectManager  {
 	
 	public LoginPlayer findPlayer(String guid) {
 		return (LoginPlayer)this.get(guid);
+	}
+	
+	public void foreachPlayer(Callback<LoginPlayer> callback) {
+		for (String guid : this.allOwnerDataSet.keySet()) {
+			callback.invoke(this.findPlayer(guid));
+		}
 	}
 }
