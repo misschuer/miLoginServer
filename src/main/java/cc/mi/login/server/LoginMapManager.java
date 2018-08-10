@@ -4,8 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import cc.mi.core.algorithm.IndexTree;
+import cc.mi.core.constance.MapTypeConst;
 import cc.mi.core.constance.ObjectType;
 import cc.mi.core.log.CustomLogger;
+import cc.mi.core.manager.MapTemplateManager;
 import cc.mi.core.server.GuidManager;
 import cc.mi.core.server.SessionStatus;
 import cc.mi.core.xlsxData.MapTemplate;
@@ -70,7 +72,7 @@ public enum LoginMapManager {
 				return;
 			}
 			
-			MapTemplate mt = MapTemplate.getTemplate(context.getTeleMapId());
+			MapTemplate mt = MapTemplateManager.INSTANCE.getTemplate(context.getTeleMapId());
 			if (mt == null || !mt.isValidPosition((int)player.getTeleportPosX(), (int)player.getTeleportPosY())) {
 				//如果待传送的目的地不是有效的则传回主城
 				logger.errorLog("UpdateTeleport:player to mapid = {}, to instanceid = {}, pos({}, {})", 
@@ -116,8 +118,8 @@ public enum LoginMapManager {
 			return;
 		}
 		
-		MapTemplate toMt = MapTemplate.getTemplate(context.getTeleMapId());
-		MapTemplate frMt = MapTemplate.getTemplate(player.getMapId());
+		MapTemplate toMt = MapTemplateManager.INSTANCE.getTemplate(context.getTeleMapId());
+		MapTemplate frMt = MapTemplateManager.INSTANCE.getTemplate(player.getMapId());
 		// 从副本到主城
 		if (frMt.isInstance() && !toMt.isInstance()) {
 			delRecordInstance(player);
@@ -128,7 +130,7 @@ public enum LoginMapManager {
 		logger.devLog("teleportTo end");
 	}
 //
-//	void MapManager::Call_Join_Map(uint32 index, logind_player *player)
+//	void MapManager::Call_Join_Map(uint32 index, LoginContext context)
 //	{
 //		tea_pdebug("MapManager::Call_Join_Map player %s call join map begin", player->GetGuid().c_str());
 //		uint32 m_scened_conn = GetScenedConn(index);
@@ -162,8 +164,8 @@ public enum LoginMapManager {
 //		tea_pdebug("MapManager::Call_Join_Map player %s call join map end", player->GetGuid().c_str());
 //	}
 //
-//	void MapManager::AddPlayer(uint32 index, logind_player *player)
-//	{
+
+	protected void addPlayer(int index, LoginContext context) {
 //		//加入玩家信息
 //		BinLogObject *binlog = dynamic_cast<BinLogObject*>(ObjMgr.Get(GetInstancePlayerInfoID(GetInstanceID(index))));
 //		if(!binlog)
@@ -200,9 +202,9 @@ public enum LoginMapManager {
 //
 //		//加入地图
 //		Call_Join_Map(index, player);	
-//	}
+	}
 
-	private int delPlayer(LoginPlayer player) {
+	private int delPlayer(LoginContext context) {
 //		//由于存在网络同步问题，所以不信任玩家身上的instanceid
 //		int32 index = ForEach([&](uint32 index){
 //			uint32 instance_id = GetInstanceID(index);
@@ -265,8 +267,8 @@ public enum LoginMapManager {
 		int lineNo = player.getTeleportLineNo();
 		logger.devLog("player {} join map {} begin, instanceid {}, lineno {}", player.getGuid(), mapId, instId, lineNo);
 		
-		MapTemplate mt = MapTemplate.getTemplate(mapId);
-		if (mt == null || !MapTemplate.containsTemplate(mapId)) {
+		MapTemplate mt = MapTemplateManager.INSTANCE.getTemplate(mapId);
+		if (mt == null || !MapTemplateManager.INSTANCE.containsTemplate(mapId)) {
 			logger.devLog("player {} join map {}, Parent MapTemplate not find", player.getGuid(), mapId);
 			return false;
 		}
@@ -280,8 +282,8 @@ public enum LoginMapManager {
 		
 		if (index > 0) {
 			//旧实例删除对象
-			this.delPlayer(player);
-//			AddPlayer(index, player);
+			this.delPlayer(context);
+			this.addPlayer(index, context);
 			logger.devLog("player {} join map {} end", player.getGuid(), mapId);
 			return true;
 		}
@@ -298,8 +300,9 @@ public enum LoginMapManager {
 	}
 
 	//玩家登录时的逻辑
-	public void playerLogin(LoginPlayer player) {
+	public void playerLogin(LoginContext context) {
 		
+		LoginPlayer player = context.getPlayer();
 		int instanceid = 0;
 		PlayerInstInfo playerInstInfo = playerInstInfoHash.get(player.getGuid());
 
@@ -327,7 +330,7 @@ public enum LoginMapManager {
 			player.relocateDBPosition();
 			
 			//如果从数据库load出来是副本地图,则置为主城,一般出现这种情况都是异常数据
-			MapTemplate mt = MapTemplate.getTemplate(player.getMapId());
+			MapTemplate mt = MapTemplateManager.INSTANCE.getTemplate(player.getMapId());
 			if (mt == null || mt.isInstance()) {
 				player.setMapId(ZHUCHENG_DITU_ID);
 				player.setPosition(ZHUCHENG_FUHUO_X, ZHUCHENG_FUHUO_Y);
@@ -423,10 +426,8 @@ public enum LoginMapManager {
 	//根据地图模板的类型的副本类型进行控制
 	int HandleGetInstance(LoginPlayer player, MapTemplate mt, int lineNo, int mapId) {
 		
-		int instType = 0;
-//		uint16 inst_type = mt->GetMapBaseInfo().instance_type; //副本类型见枚举MapInstanceType
-//		uint32 parent_map = mt->GetParentMapid();
-		int parentMap = 1;
+		int instType = mt.getBaseInfo().getType(); //副本类型见枚举MapTypeConst
+		int parentMap = mt.getBaseInfo().getParentId();
 
 		//判断一下传送ID
 		boolean needGeneral = this.isNeedGeneral(parentMap);
@@ -455,8 +456,7 @@ public enum LoginMapManager {
 	
 	private int findOrCreateMap(int mapId, int instType, String ext, int lineNo) {
 		
-//		if(inst_type == MAP_INST_TYP_SINGLETON)then	--单人副本
-		if (instType == 0) {
+		if (instType == MapTypeConst.MAP_TYPE_INSTANCE) {
 			return this.createInstance(mapId, ext, lineNo);
 		}
 		
@@ -476,11 +476,9 @@ public enum LoginMapManager {
 	//创建新的地图实例
 	int createInstance(int mapId, String ext, int lineNo) {
 		
-		MapTemplate mt = MapTemplate.getTemplate(mapId);
-		int instType = 0;
-//		uint16 inst_typ = mt->GetMapBaseInfo().instance_type;
-//		uint32 parent_id = mt->GetParentMapid();
-		int parentId = 1;
+		MapTemplate mt = MapTemplateManager.INSTANCE.getTemplate(mapId);
+		int instType = mt.getBaseInfo().getType();
+		int parentId = mt.getBaseInfo().getParentId();
 		
 		int instId = 0;
 		int conn = 0;
@@ -636,6 +634,7 @@ public enum LoginMapManager {
 //	}
 	
 	private int getScenedConn(int index) {
+		//TODO: 
 		return 1;
 	}
 	
@@ -651,7 +650,7 @@ public enum LoginMapManager {
 	}
 
 	//根据实例ID进行查找地图实例
-	private int findInstance(int instanceid) {
+	protected int findInstance(int instanceid) {
 		for (MapInstInfo mapInstInfo: mapInstInfoHash.values()) {
 			if (mapInstInfo.getInstId() == instanceid) {
 				return mapInstInfo.getIndx();
@@ -662,7 +661,7 @@ public enum LoginMapManager {
 	}
 
 	//查找地图实例
-	private int findInstance(int mapId, final String ext, int lineNo) {
+	protected int findInstance(int mapId, final String ext, int lineNo) {
 		for (MapInstInfo mapInstInfo: mapInstInfoHash.values()) {
 			if (mapInstInfo.getInstId() > 0
 				&& mapInstInfo.getParentId() == mapId
@@ -676,7 +675,7 @@ public enum LoginMapManager {
 	}
 
 	//根据general_id查找
-	private int findInstance(final String ext) {
+	protected int findInstance(final String ext) {
 		if (ext == null || ext.isEmpty()) {
 			return -1;
 		}
