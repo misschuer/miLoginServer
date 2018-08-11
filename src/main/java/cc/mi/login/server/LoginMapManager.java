@@ -164,6 +164,7 @@ public enum LoginMapManager {
 //		DoAddScenedPlayer(m_scened_conn);
 //		//ServerList.ScenedAddPlayer(m_scened_conn);
 //		tea_pdebug("MapManager::Call_Join_Map player %s call join map end", player->GetGuid().c_str());
+
 	}
 
 
@@ -203,7 +204,6 @@ public enum LoginMapManager {
 		}
 		return -1;
 	}
-	
 
 	private int delPlayer(LoginContext context) {
 		//TODO:由于存在网络同步问题，所以不信任玩家身上的instanceid
