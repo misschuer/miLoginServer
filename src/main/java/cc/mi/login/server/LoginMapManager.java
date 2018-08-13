@@ -9,6 +9,7 @@ import cc.mi.core.callback.AbstractCallback;
 import cc.mi.core.constance.InstanceConst;
 import cc.mi.core.constance.MapTypeConst;
 import cc.mi.core.constance.ObjectType;
+import cc.mi.core.generate.msg.CreateMap;
 import cc.mi.core.log.CustomLogger;
 import cc.mi.core.manager.MapTemplateManager;
 import cc.mi.core.server.ContextManager;
@@ -253,7 +254,7 @@ public enum LoginMapManager {
 		if (instId > 0) {
 			index = this.findInstance(instId);				//如果是加入已有实例
 		} else {
-			index = this.HandleGetInstance(player, mt, lineNo, mapId);
+			index = this.handleGetInstance(player, mt, lineNo, mapId);
 		}
 		
 		if (index > 0) {
@@ -395,7 +396,7 @@ public enum LoginMapManager {
 	}
 
 	//根据地图模板的类型的副本类型进行控制
-	int HandleGetInstance(LoginPlayer player, MapTemplate mt, int lineNo, int mapId) {
+	int handleGetInstance(LoginPlayer player, MapTemplate mt, int lineNo, int mapId) {
 		
 		int instType = mt.getBaseInfo().getType(); //副本类型见枚举MapTypeConst
 		int parentMap = mt.getBaseInfo().getParentId();
@@ -482,19 +483,23 @@ public enum LoginMapManager {
 			return -1;
 		}
 		
-//		//开始增加地图信息
-//		//找个空位
+		//开始增加地图信息
+		//找个空位
 		int result = this.indexTree.newIndex();
 		if (result < 0) {
 			throw new RuntimeException("mapinstinfo index < 0");
 		}
 		MapInstInfo mapInstInfo = new MapInstInfo(result, instId, parentId, lineNo, conn, ext);
 		this.setMapInstanceInfo(result, mapInstInfo);
-//		//通知场景服创建地图实例
-//		WorldPacket pkt_scened(INTERNAL_OPT_ADD_MAP_INSTANCE);
-//		pkt_scened << instance_id << mapid << lineno << general_id;
-//		LogindApp::g_app->SendToScened(pkt_scened, conn);
-//
+		//通知场景服创建地图实例
+		CreateMap cm = new CreateMap();
+		cm.setFD(conn);
+		cm.setInstId(instId);
+		cm.setMapId(mapId);
+		cm.setLineNo(lineNo);
+		cm.setExt(ext);
+		LoginServerManager.getInstance().sendToCenter(cm);
+
 //		//创建地图标记
 //		if (DoIsWorldMapID(mapid)) {
 //			MapManager::lineCreated(mapid, lineno, instance_id);
