@@ -204,10 +204,6 @@ public class LoginServerManager extends ServerManager {
 		}
 	}
 	
-	public void closeSession(int fd, int reasonType) {
-		ContextManager.closeSession(this.gateChannel, fd, reasonType);
-	}
-	
 	public void pushSession(int fd) {
 		sessionQueue.add(fd);
 	}

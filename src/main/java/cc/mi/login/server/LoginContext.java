@@ -525,19 +525,13 @@ public class LoginContext extends ServerContext {
 //	}
 
 	@Override
-	protected void sendToGate(Packet coder) {
+	public void sendToGate(Packet coder) {
 		LoginServerManager.getInstance().sendToGate(coder);
 	}
 
 	@Override
-	protected void sendToCenter(Packet coder) {
+	public void sendToCenter(Packet coder) {
 		LoginServerManager.getInstance().sendToCenter(coder);
-	}
-
-	@Override
-	protected void operationResult(short type, String data) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
