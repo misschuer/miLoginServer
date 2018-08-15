@@ -14,7 +14,6 @@ import cc.mi.core.binlog.data.BinlogData;
 import cc.mi.core.binlog.data.BinlogModifier;
 import cc.mi.core.constance.GlobalFields;
 import cc.mi.core.constance.ObjectType;
-import cc.mi.core.constance.PlayerEnumFields;
 import cc.mi.core.generate.stru.CharInfo;
 import cc.mi.core.server.GuidManager;
 import cc.mi.core.utils.FileUtils;
@@ -175,7 +174,7 @@ public enum LoginCache {
 		BinlogData obj = null;
 		switch (guid.charAt(0)) {
 		case ObjectType.PLAYER:
-			obj = new LoginPlayer(PlayerEnumFields.PLAYER_INT_FIELDS_SIZE, PlayerEnumFields.PLAYER_STR_FIELDS_SIZE);
+			obj = new LoginPlayer();
 			break;
 		default:
 			obj = new BinlogData(guid, 1 << 6, 1 << 6);

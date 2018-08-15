@@ -421,8 +421,7 @@ public class LoginContext extends ServerContext {
 		LoginServerManager.getInstance().addTagWatchAndCall(this.getFd(), this.getGuid());
 
 		//登录完成，准备传送
-//		LoginMapManager.INSTANCE
-//		MapMgr->PlayerLogin(m_player);
+		LoginMapManager.INSTANCE.playerLogin(this);
 		//登录完毕，状态置一下
 		this.setStatus(SessionStatus.STATUS_LOGGEDIN);
 

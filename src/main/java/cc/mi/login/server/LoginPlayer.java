@@ -1,5 +1,6 @@
 package cc.mi.login.server;
 
+import cc.mi.core.constance.PlayerEnumFields;
 import cc.mi.core.server.PlayerBase;
 import cc.mi.core.utils.RandomUtils;
 import cc.mi.core.utils.TimestampUtils;
@@ -14,8 +15,8 @@ public class LoginPlayer extends PlayerBase {
 	
 	private int fd;
 
-	public LoginPlayer(int intMaxSize, int strMaxSize) {
-		super(intMaxSize, strMaxSize);
+	public LoginPlayer() {
+		super(PlayerEnumFields.PLAYER_INT_FIELDS_SIZE, PlayerEnumFields.PLAYER_STR_FIELDS_SIZE);
 	}
 	
 	public void initNewPlayer (String name, byte gender, boolean isFcm) {

@@ -39,4 +39,9 @@ public class LoginObjectManager extends ServerObjectManager  {
 			callback.invoke(this.findPlayer(guid));
 		}
 	}
+
+	@Override
+	protected BinlogData createBinlogData(String guid) {
+		return new BinlogData(1 << 6, 1 << 6);
+	}
 }

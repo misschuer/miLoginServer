@@ -1,7 +1,6 @@
 package cc.mi.login.handler;
 
 import cc.mi.core.constance.ObjectType;
-import cc.mi.core.constance.PlayerEnumFields;
 import cc.mi.core.generate.msg.CreateChar;
 import cc.mi.core.generate.stru.CharInfo;
 import cc.mi.core.handler.HandlerImpl;
@@ -44,7 +43,7 @@ public class CreateCharHandler extends HandlerImpl {
 			return;
 		}
 		String guid = GuidManager.INSTANCE.makeNewGuid(ObjectType.PLAYER, context.getFromServerName());
-		LoginPlayer newPlayer = new LoginPlayer(PlayerEnumFields.PLAYER_INT_FIELDS_SIZE, PlayerEnumFields.PLAYER_STR_FIELDS_SIZE);
+		LoginPlayer newPlayer = new LoginPlayer();
 		newPlayer.setGuid(guid);
 		newPlayer.setOwner(guid);
 		newPlayer.setAccount(context.getAccount());

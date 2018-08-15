@@ -10,6 +10,7 @@ import cc.mi.core.constance.InstanceConst;
 import cc.mi.core.constance.MapTypeConst;
 import cc.mi.core.constance.ObjectType;
 import cc.mi.core.generate.msg.CreateMap;
+import cc.mi.core.generate.msg.JoinMapMsg;
 import cc.mi.core.log.CustomLogger;
 import cc.mi.core.manager.MapTemplateManager;
 import cc.mi.core.server.ContextManager;
@@ -31,6 +32,8 @@ public enum LoginMapManager {
 	
 	private int sceneCollapseTime;
 	private int sceneCnt;
+	
+	private byte teleportCallbackIndex = 0;
 	
 	private final Map<String, PlayerInstInfo> playerInstInfoHash = new HashMap<>();
 	// 地图实例信息
@@ -158,16 +161,27 @@ public enum LoginMapManager {
 //		pkt_scened << m_scened_conn << player->GetSession()->GetFD() << player->guid() << player->GetTeleportMapID() << GetInstanceID(index)
 //			<< player->GetTeleportPosX()<< player->GetTeleportPosY() << m_teleport_callback_index;
 //		LogindApp::g_app->SendToScened(pkt_scened, m_scened_conn);
-//		//传送完毕，设置FD
-//		player->SetScenedFD(m_scened_conn);
-//
+		
+		LoginPlayer player = context.getPlayer();
+		player.setTeleportSign(++ teleportCallbackIndex);
+		JoinMapMsg jmm = new JoinMapMsg();
+		jmm.setFd(context.getFd());
+		jmm.setInstId(mapInstInfo.getInstId());
+		jmm.setOwnerId(player.getGuid());
+		jmm.setSign(teleportCallbackIndex);
+		jmm.setTeleMapId(player.getTeleportMapID());
+		jmm.setX(player.getTeleportPosX());
+		jmm.setY(player.getTeleportPosY());
+		jmm.setFD(scenedConn);
+		
+		LoginServerManager.getInstance().sendToCenter(jmm);
+		//传送完毕，设置场景服FD
+		player.setSceneFd(scenedConn);
+
 //		//场景服计数加1
 //		DoAddScenedPlayer(m_scened_conn);
-//		//ServerList.ScenedAddPlayer(m_scened_conn);
-//		tea_pdebug("MapManager::Call_Join_Map player %s call join map end", player->GetGuid().c_str());
-
+		logger.devLog("callJoinMap player {} call join map end", player.getGuid());
 	}
-
 
 	protected void addPlayer(int index, LoginContext context) {
 
