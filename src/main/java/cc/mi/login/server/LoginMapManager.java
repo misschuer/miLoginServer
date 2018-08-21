@@ -619,8 +619,7 @@ public enum LoginMapManager {
 //	}
 	
 	private int getScenedConn(int index) {
-		//TODO: 
-		return 1;
+		return mapInstInfoHash.get(index).getSceneConn();
 	}
 	
 	private int getNewInstanceID() {

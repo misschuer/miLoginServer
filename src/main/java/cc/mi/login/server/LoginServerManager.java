@@ -32,6 +32,7 @@ import cc.mi.login.config.ServerConfig;
 import cc.mi.login.handler.CheckSessionHandler;
 import cc.mi.login.handler.CreateCharHandler;
 import cc.mi.login.handler.CreateConnectionHandler;
+import cc.mi.login.handler.InnerServerConnListHandler;
 import cc.mi.login.loginAction.LoginQueueManager;
 
 public class LoginServerManager extends ServerManager {
@@ -62,6 +63,7 @@ public class LoginServerManager extends ServerManager {
 		handlers.put(Opcodes.MSG_CREATECONNECTION, new CreateConnectionHandler());
 		handlers.put(Opcodes.MSG_CHECKSESSION, new CheckSessionHandler());
 		handlers.put(Opcodes.MSG_CREATECHAR, new CreateCharHandler());
+		handlers.put(Opcodes.MSG_INNERSERVERCONNLIST, new InnerServerConnListHandler());
 		
 		opcodes = new LinkedList<>();
 		opcodes.addAll(handlers.keySet());

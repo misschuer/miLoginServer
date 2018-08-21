@@ -6,7 +6,6 @@ import cc.mi.core.utils.RandomUtils;
 import cc.mi.core.utils.TimestampUtils;
 
 public class LoginPlayer extends PlayerBase {
-	//FIXME: 到时都填表
 	private static final int BORN_MAP	= 1001; //出生地图
 	private static final int BORN_X		= 143;	//出生坐标x
 	private static final int BORN_Y		= 113;	//出生坐标y

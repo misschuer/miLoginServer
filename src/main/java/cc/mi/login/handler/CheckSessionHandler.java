@@ -17,7 +17,7 @@ public class CheckSessionHandler extends HandlerImpl {
 	final static CustomLogger logger = CustomLogger.getLogger(CheckSessionHandler.class);
 	
 	@Override
-	public void handle(ServerContext player, Channel channel, Packet decoder) {
+	public void handle(ServerContext nil, Channel channel, Packet decoder) {
 		CheckSession packet = (CheckSession) decoder;
 		int fd = packet.getFD();
 		

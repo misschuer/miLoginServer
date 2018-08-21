@@ -19,7 +19,7 @@ import io.netty.channel.Channel;
 public class CreateCharHandler extends HandlerImpl {
 
 	@Override
-	public void handle(ServerContext player, Channel channel, Packet decoder) {
+	public void handle(ServerContext nil, Channel channel, Packet decoder) {
 		CreateChar createChar = (CreateChar)decoder;
 		int fd = createChar.getFD();
 		LoginContext context = (LoginContext)ContextManager.getContext(fd);

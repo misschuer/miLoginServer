@@ -11,7 +11,7 @@ public class CreateConnectionHandler extends HandlerImpl {
 	
 	static final CustomLogger logger = CustomLogger.getLogger(CreateConnectionHandler.class);
 	@Override
-	public void handle(ServerContext player, Channel channel, Packet decoder) {
+	public void handle(ServerContext nil, Channel channel, Packet decoder) {
 		CreateConnection packet = (CreateConnection)decoder;
 		logger.devLog("fd = {} ip = {} port = {}", packet.getFd(), packet.getRemoteIp(), packet.getRemotePort());
 	}

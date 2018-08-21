@@ -20,7 +20,7 @@ import io.netty.channel.Channel;
 public class GetSessionHandler extends HandlerImpl {
 
 	@Override
-	public void handle(ServerContext player, Channel channel, Packet decoder) {
+	public void handle(ServerContext nil, Channel channel, Packet decoder) {
 //		GetSession coder = (GetSession)decoder;
 //		
 //		int fd = coder.getFd();
