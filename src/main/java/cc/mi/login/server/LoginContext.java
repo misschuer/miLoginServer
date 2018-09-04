@@ -7,8 +7,10 @@ import java.util.Map;
 
 import cc.mi.core.binlog.data.BinlogData;
 import cc.mi.core.callback.AbstractCallback;
+import cc.mi.core.constance.IdentityConst;
 import cc.mi.core.constance.ObjectType;
 import cc.mi.core.constance.OperateConst;
+import cc.mi.core.generate.msg.PlayerLoginMsg;
 import cc.mi.core.generate.msg.SendCharInfo;
 import cc.mi.core.generate.stru.CharInfo;
 import cc.mi.core.log.CustomLogger;
@@ -448,15 +450,18 @@ public class LoginContext extends ServerContext {
 			return;
 		}
 
-//		WorldPacket pkt(INTERNAL_OPT_PLAYER_LOGIN);
-//		pkt << fd_ << m_player->GetGuid() << uint8(CONTEXT_TYPE_YEYOU);
-//		
-//		//通知中心服建立连接
-//		LogindApp::g_app->SendToCentd(pkt);
-//		//通知应用服建立连接
-//		LogindApp::g_app->SendToAppd(pkt);
-//		//通知日志服建立连接
-//		LogindApp::g_app->SendToPoliced(pkt);
+		//通知中心服建立连接
+		PlayerLoginMsg packetCentre = new PlayerLoginMsg();
+		packetCentre.setClientFd(this.getFd());
+		packetCentre.setGuid(this.player.getGuid());
+		LoginServerManager.getInstance().sendToCenter(packetCentre);
+		
+		//通知应用服建立连接
+		PlayerLoginMsg packetApp = new PlayerLoginMsg();
+		packetApp.setClientFd(this.getFd());
+		packetApp.setGuid(this.player.getGuid());
+		packetApp.setFD(IdentityConst.SERVER_TYPE_APP);
+		LoginServerManager.getInstance().sendToCenter(packetApp);
 	}
 	
 	public String getAccount() {
