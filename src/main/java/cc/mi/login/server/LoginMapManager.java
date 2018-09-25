@@ -1,6 +1,8 @@
 package cc.mi.login.server;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -10,7 +12,9 @@ import cc.mi.core.constance.InstanceConst;
 import cc.mi.core.constance.MapTypeConst;
 import cc.mi.core.constance.ObjectType;
 import cc.mi.core.generate.msg.CreateMap;
+import cc.mi.core.generate.msg.DeleteMap;
 import cc.mi.core.generate.msg.JoinMapMsg;
+import cc.mi.core.generate.msg.PlayerLeaveMap;
 import cc.mi.core.log.CustomLogger;
 import cc.mi.core.manager.MapTemplateManager;
 import cc.mi.core.server.ContextManager;
@@ -154,14 +158,7 @@ public enum LoginMapManager {
 			return;
 		}
 
-//		//通知场景服，玩家加入地图	
-//		player->SetTeleportSign(--m_teleport_callback_index);
-//		//ASSERT(m_teleport_callback_index < 0);
-//		WorldPacket pkt_scened(INTERNAL_OPT_JOIN_MAP);
-//		pkt_scened << m_scened_conn << player->GetSession()->GetFD() << player->guid() << player->GetTeleportMapID() << GetInstanceID(index)
-//			<< player->GetTeleportPosX()<< player->GetTeleportPosY() << m_teleport_callback_index;
-//		LogindApp::g_app->SendToScened(pkt_scened, m_scened_conn);
-		
+		//通知场景服，玩家加入地图
 		LoginPlayer player = context.getPlayer();
 		player.setTeleportSign(++ teleportCallbackIndex);
 		JoinMapMsg jmm = new JoinMapMsg();
@@ -228,24 +225,28 @@ public enum LoginMapManager {
 			MapInstInfo instInfo = this.mapInstInfoHash.get(index);
 			int mapid	= instInfo.getParentId();
 			int instid	= instInfo.getInstId();
-//			int fd		= instInfo.getSceneConn();
+			int sceneFd = instInfo.getSceneConn();
 			logger.devLog("player leave map {} {} {}", context.getGuid(), mapid, instid);
-//			DoSubScenedPlayer(fd);
-//			WorldPacket pkt(INTERNAL_OPT_LEAVE_MAP);
-//			pkt << player->guid() << player->GetSession()->GetFD();
-//			LogindApp::g_app->SendToScened(pkt, fd);
+//TODO:			DoSubScenedPlayer(fd);
+			PlayerLeaveMap packet = new PlayerLeaveMap();
+			packet.setGuid(context.getGuid());
+			packet.setClientFd(context.getFd());
+			packet.setFD(sceneFd);
+			LoginServerManager.getInstance().sendToCenter(packet);
 		} else {
 			//找不到有两种情况
 			//1.玩家登录传送，这种没办法
 			//2.ObjectTypeMapPlayerInfo丢失
 			//解决方案是，所有场景服都发一次离开场景服
 			//风险是场景服人数统计会失效，不用修复了
-//			WorldPacket pkt(INTERNAL_OPT_LEAVE_MAP);
-//			pkt << player->guid() << 0;
-//			ServerList.ForEachScened([&pkt](uint32 fd){
-//				LogindApp::g_app->SendToScened(pkt, fd);
-//				return false;
-//			});
+			List<Integer> sceneList = LoginServerManager.getInstance().getConnList().getSceneConns();
+			for (int sceneFd : sceneList) {
+				PlayerLeaveMap packet = new PlayerLeaveMap();
+				packet.setGuid(context.getGuid());
+				packet.setClientFd(context.getFd());
+				packet.setFD(sceneFd);
+				LoginServerManager.getInstance().sendToCenter(packet);
+			}
 		}
 		return index;
 	}
@@ -279,8 +280,8 @@ public enum LoginMapManager {
 			return true;
 		}
 		//创建实例失败
+		context.closeSession(0);
 //			Call_operation_failed(player->GetSession()->m_delegate_sendpkt,OPRATE_TYPE_LOGIN,OPRATE_RESULT_SCENED_CLOSE,"");
-//			player->GetSession()->Close(PLAYER_CLOSE_OPERTE_LOGDIN_ONE22,"");
 		logger.devLog("player:{} teleport fail! mapid:{},instid:{},lineno:{}", player.getGuid(), mapId, instId, lineNo);
 		return false;
 	}
@@ -467,7 +468,7 @@ public enum LoginMapManager {
 	}
 
 	//创建新的地图实例
-	int createInstance(int mapId, String ext, int lineNo) {
+	private int createInstance(int mapId, String ext, int lineNo) {
 		
 		MapTemplate mt = MapTemplateManager.INSTANCE.getTemplate(mapId);
 		int instType = mt.getBaseInfo().getType();
@@ -485,8 +486,7 @@ public enum LoginMapManager {
 			conn = this.getScenedConn(this.findInstance(mapId, ext, lineNo));
 		} else {
 			instId = this.getNewInstanceID();
-//TODO:			conn = DoGetScenedFDByType(inst_typ, mapid);
-			conn = 1;
+			conn = this.getScenedFDByMapID(mapId);
 		}
 
 		logger.devLog("createInstance instType = {}, parentId = {}, instId = {}, conn = {} begin"
@@ -505,6 +505,9 @@ public enum LoginMapManager {
 		}
 		MapInstInfo mapInstInfo = new MapInstInfo(result, instId, parentId, lineNo, conn, ext);
 		this.setMapInstanceInfo(result, mapInstInfo);
+		if (!this.instPlayerInHash.containsKey(instId)) {
+			this.instPlayerInHash.put(instId, new HashSet<>());
+		}
 		//通知场景服创建地图实例
 		CreateMap cm = new CreateMap();
 		cm.setFD(conn);
@@ -522,77 +525,68 @@ public enum LoginMapManager {
 		logger.devLog("createInstance end");
 		return result;
 	}
+	
+	private int getScenedFDByMapID(int mapId) {
+		return LoginServerManager.getInstance().getConnList().getSceneConns().get(0);
+	}
 
-//	//关闭某一地图
-//	bool MapManager::TryClose(uint32 instance_id)
-//	{
-//		if(instance_id == 0)
-//			return false;
-//
-//		//为了给下面的打印用，从循环里挪出来了
-//		int32 index = findInstance(instance_id);
-//		if(index < 0)
-//			return true;
-//		int mapid = GetMapID(index);
-//		uint32 lineNo = GetLineNo(index);
-//		uint32 scened_conn = GetScenedConn(index);
-//
-//		//看看还有没有玩家在里面
-//		string player_info_id = GetInstancePlayerInfoID(instance_id);
-//		BinLogObject *binlog = dynamic_cast<BinLogObject*>(ObjMgr.Get(player_info_id));
-//		if(!binlog)
-//		{
-//			tea_perror("MapManager::TryClose GetInstancePlayerInfoID==NULL  %s", player_info_id.c_str());
-//			return false;
-//		}
-//		uint32 str_s = binlog->length_str();
-//		for (uint32 i = MAP_INSTANCE_PLAYER_INFO_START_FIELD; i < str_s; i++)
-//		{
-//			if(!binlog->GetStr(i).empty())
-//			{
-//				tea_pinfo("MapManager::TryClose has player %s  %s, mapid = %d, conn = %u"
-//					, binlog->GetStr(i).c_str(), player_info_id.c_str(), mapid, scened_conn);
-//				return false;
-//			}
-//		}
-//
-//		bool call_del = false;
-//		while(true)
-//		{
-//			//如果场景服连接还活着，关闭吧
-//			if(!call_del && scened_conn)
-//			{
-//				CallDelMapInstance(index);
-//				call_del = true;
-//				//请掉这个地图内的玩家数据
-//				ObjMgr.CallRemoveObject(player_info_id);
-//			}
-//			//清空地图信息
-//			SetMapInstanceInfo(index, 0, 0, 0, 0, "");
-//
-//			index = findInstance(instance_id);
-//			if(index < 0)
-//				break;
-//		}
-//		ASSERT(call_del);
-//
-//		// 看下删不删
+	//关闭某一地图
+	public boolean tryClose(int instId) {
+		
+		if (instId == 0) {
+			return false;
+		}
+		//为了给下面的打印用，从循环里挪出来了
+		int index = this.findInstance(instId);
+		if(index < 0) {
+			return true;
+		}
+		
+		MapInstInfo mapInstInfo = this.mapInstInfoHash.get(index);
+		int sceneFd = mapInstInfo.getSceneConn();
+
+		//看看还有没有玩家在里面
+		if (!this.instPlayerInHash.containsKey(instId)) {
+			logger.devLog("tryClose instPlayerInHash is null instId = {}", instId);
+			return false;
+		}
+		
+		boolean callDel = false;
+		while(true) {
+			//如果场景服连接还活着，关闭吧
+			if(!callDel && sceneFd > 0) {
+				this.callDelMapInstance(index);
+				callDel = true;
+				//请掉这个地图内的玩家数据
+				this.instPlayerInHash.remove(instId);
+			}
+			//清空地图信息
+			this.removeMapInstanceInfo(index);
+
+			index = this.findInstance(instId);
+			if (index < 0) {
+				break;
+			}
+		}
+
+		// 看下删不删
 //		if (DoIsWorldMapID(mapid)) {
 //			MapManager::lineRemoved(mapid, lineNo);
 //		}
-//
-//		tea_pdebug("MapManager::TryClose instance_id = %u, end", instance_id);
-//		return true;
-//	}
-//
-//	void MapManager::CallDelMapInstance(uint32 index)
-//	{
-//		WorldPacket pkt_scened(INTERNAL_OPT_DEL_MAP_INSTANCE);
-//		pkt_scened << GetMapID(index)<< GetInstanceID(index);
-//		uint32 m_scened_conn = GetScenedConn(index);
-//		LogindApp::g_app->SendToScened(pkt_scened, m_scened_conn);
-//	}
-//
+		
+		logger.devLog("tryClose instId = {} end", instId);
+		return true;
+	}
+
+	private void callDelMapInstance(int index) {
+		MapInstInfo mapInstInfo = this.mapInstInfoHash.get(index);
+		DeleteMap packet = new DeleteMap();
+		packet.setFD(mapInstInfo.getSceneConn());
+		packet.setInstId(mapInstInfo.getInstId());
+		packet.setMapId(mapInstInfo.getParentId());
+		LoginServerManager.getInstance().sendToCenter(packet);
+	}
+
 	// 场景服异常终止处理 
 	public boolean onScenedClosed(int scenedId) {
 		logger.devLog("scened {} close", scenedId);
@@ -605,9 +599,8 @@ public enum LoginMapManager {
 		
 		return true;
 	}
-//
-//	void MapManager::Close()
-//	{
+	
+	public void close() {
 //		ForEach([&](uint32 index){
 //			if(GetInstanceID(index))
 //			{
@@ -615,8 +608,8 @@ public enum LoginMapManager {
 //			}
 //			return false;
 //		});
-//		
-//	}
+		
+	}
 	
 	private int getScenedConn(int index) {
 		return mapInstInfoHash.get(index).getSceneConn();

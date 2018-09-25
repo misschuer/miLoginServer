@@ -11,6 +11,7 @@ import cc.mi.core.constance.IdentityConst;
 import cc.mi.core.constance.ObjectType;
 import cc.mi.core.constance.OperateConst;
 import cc.mi.core.generate.msg.PlayerLoginMsg;
+import cc.mi.core.generate.msg.PlayerLogoutMsg;
 import cc.mi.core.generate.msg.SendCharInfo;
 import cc.mi.core.generate.stru.CharInfo;
 import cc.mi.core.log.CustomLogger;
@@ -114,60 +115,40 @@ public class LoginContext extends ServerContext {
 		return true;
 	}
 
-//	public void onClosed() {
-////		tea_pdebug("player %s %u logout. begin", m_lguid.c_str(), fd_);
-////		if(m_player)
-////		{
-////			tea_pdebug("player %s %u logout. remove player", m_lguid.c_str(), fd_);
-////			ASSERT(GetStatus() == STATUS_LOGGEDIN);
-////			//通知其他服务器玩家下线
-////			WorldPacket pkt(INTERNAL_OPT_PLAYER_LOGOUT);
-////			pkt << fd_ << m_player->GetGuid();
-////			//通知应用服
-////			if(!LogindApp::g_app->SendToAppd(pkt))
-////			{
-////				tea_pdebug("player %s %u logout. appd collapse", m_lguid.c_str(), fd_);
-////			}
-////			//通知日志服
-////			if(!LogindApp::g_app->SendToPoliced(pkt))
-////			{
-////				tea_pdebug("player %s %u logout. policed collapse", m_lguid.c_str(), fd_);
-////			}
-////
-////			//从地图管理器退出
-////			MapMgr->PlayerLogout(m_player);
-////
-////			//玩家离开记录玩家退出时间
-////			m_player->SetLastLogoutTime((uint32)time(NULL));
-////			// 只有在冒险世界下线才需要设置
-////			if (m_player->GetPickRiskRewardFlag() == 1) {
-////				m_player->SetPickRiskRewardFlag(0);
-////				m_player->SetLastLeaveRiskTime((uint32)time(NULL));
-////			}
-////
-////			//玩家下线做点什么
-////			DoPlayerLogout(m_player);
-////
-////			//数据对象的session置空
-////			m_player->SetSession(NULL);
-////
-////			//进入等待移除列表
-////			g_Cache.AddLogoutPlayer(m_lguid);
-////		}
-////		
-////		//从账号映射表删除
-////		if (fd_ && fd_ == LogindContext::FindSessionID(m_account))
-////		{
-////			LogindContext::SessionMaps.erase(m_account);
-////		}
-////
-////		//保存一下登出LOG
-////		SavePlayerLogoutLog();
-////		//从app中移除自己
-////		LogindApp::g_app->RomoveContext(this);
-////		tea_pdebug("player %s %u logout. end", m_lguid.c_str(), fd_);
-//	}
-//	
+	public void onClosed() {
+		logger.devLog("player guid={} fd=%u logout. begin", this.getGuid(), this.getFd());
+		if (this.player != null) {
+			logger.devLog("player guid={} fd=%u logout. remove", this.getGuid(), this.getFd());
+			if (this.getStatus() != SessionStatus.STATUS_LOGGEDIN) {
+				throw new RuntimeException(String.format("SessionStatus is %s need STATUS_LOGGEDIN", this.getStatus()));
+			}
+			
+			//通知其他服务器玩家下线
+			this.noticeOtherInnerServerToDestroyConnection();
+
+			//从地图管理器退出
+			LoginMapManager.INSTANCE.playerLogout(this);
+
+			//玩家离开记录玩家退出时间
+
+			//进入等待移除列表
+			LoginCache.INSTANCE.addLogoutPlayer(this.getGuid());
+		}
+		
+		//从账号映射表删除
+		int fd = this.getFd();
+		if (fd > 0 && fd == ContextManager.getSessionFd(account)) {
+			ContextManager.removeSessionFd(account);
+		}
+
+		//保存一下登出LOG
+//		SavePlayerLogoutLog();
+		//从app中移除自己
+		ContextManager.removeContext(this.getFd());
+		
+		logger.devLog("player guid={} fd=%u logout. end", this.getGuid(), this.getFd());
+	}
+	
 //	public boolean sendToScenedAddMapWatcher() {
 //		if (this.generalId.isEmpty()) {
 //			return false;
@@ -451,13 +432,22 @@ public class LoginContext extends ServerContext {
 		}
 
 		//通知中心服建立连接
-		PlayerLoginMsg packetCentre = new PlayerLoginMsg();
-		packetCentre.setClientFd(this.getFd());
-		packetCentre.setGuid(this.player.getGuid());
-		LoginServerManager.getInstance().sendToCenter(packetCentre);
+//		PlayerLoginMsg packetCentre = new PlayerLoginMsg();
+//		packetCentre.setClientFd(this.getFd());
+//		packetCentre.setGuid(this.player.getGuid());
+//		LoginServerManager.getInstance().sendToCenter(packetCentre);
 		
 		//通知应用服建立连接
 		PlayerLoginMsg packetApp = new PlayerLoginMsg();
+		packetApp.setClientFd(this.getFd());
+		packetApp.setGuid(this.player.getGuid());
+		packetApp.setFD(IdentityConst.SERVER_TYPE_APP);
+		LoginServerManager.getInstance().sendToCenter(packetApp);
+	}
+	
+	private void noticeOtherInnerServerToDestroyConnection() {
+		//通知应用服断开连接
+		PlayerLogoutMsg packetApp = new PlayerLogoutMsg();
 		packetApp.setClientFd(this.getFd());
 		packetApp.setGuid(this.player.getGuid());
 		packetApp.setFD(IdentityConst.SERVER_TYPE_APP);
