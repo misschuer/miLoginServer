@@ -21,7 +21,7 @@ public class CreateCharHandler extends HandlerImpl {
 	@Override
 	public void handle(ServerContext nil, Channel channel, Packet decoder) {
 		CreateChar createChar = (CreateChar)decoder;
-		int fd = createChar.getFD();
+		int fd = createChar.getBaseFd();
 		LoginContext context = (LoginContext)ContextManager.getContext(fd);
 	
 //		//TODO: 参数验证

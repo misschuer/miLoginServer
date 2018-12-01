@@ -116,7 +116,7 @@ public enum LoginMapManager {
 			&& (
 					context.getTeleMapId() != player.getTeleportMapID() 
 					|| context.getTeleLineNo() != player.getTeleportLineNo() 
-					|| context.getTeleExt() != player.getTeleportExt())) {
+					|| !context.getTeleExt().equals(player.getTeleportExt()))) {
 			//检测到传送成功了
 			logger.devLog("UpdateTeleport: player {} teleport to mapid {} ext {} success!",
 					context.getGuid(), context.getTeleMapId(), context.getTeleInstId());
@@ -169,7 +169,7 @@ public enum LoginMapManager {
 		jmm.setTeleMapId(player.getTeleportMapID());
 		jmm.setX(player.getTeleportPosX());
 		jmm.setY(player.getTeleportPosY());
-		jmm.setFD(scenedConn);
+		jmm.setBaseFd(scenedConn);
 		
 		LoginServerManager.getInstance().sendToCenter(jmm);
 		//传送完毕，设置场景服FD
@@ -231,7 +231,7 @@ public enum LoginMapManager {
 			PlayerLeaveMap packet = new PlayerLeaveMap();
 			packet.setGuid(context.getGuid());
 			packet.setClientFd(context.getFd());
-			packet.setFD(sceneFd);
+			packet.setBaseFd(sceneFd);
 			LoginServerManager.getInstance().sendToCenter(packet);
 		} else {
 			//找不到有两种情况
@@ -244,7 +244,7 @@ public enum LoginMapManager {
 				PlayerLeaveMap packet = new PlayerLeaveMap();
 				packet.setGuid(context.getGuid());
 				packet.setClientFd(context.getFd());
-				packet.setFD(sceneFd);
+				packet.setBaseFd(sceneFd);
 				LoginServerManager.getInstance().sendToCenter(packet);
 			}
 		}
@@ -510,7 +510,7 @@ public enum LoginMapManager {
 		}
 		//通知场景服创建地图实例
 		CreateMap cm = new CreateMap();
-		cm.setFD(conn);
+		cm.setBaseFd(conn);
 		cm.setInstId(instId);
 		cm.setMapId(mapId);
 		cm.setLineNo(lineNo);
@@ -581,7 +581,7 @@ public enum LoginMapManager {
 	private void callDelMapInstance(int index) {
 		MapInstInfo mapInstInfo = this.mapInstInfoHash.get(index);
 		DeleteMap packet = new DeleteMap();
-		packet.setFD(mapInstInfo.getSceneConn());
+		packet.setBaseFd(mapInstInfo.getSceneConn());
 		packet.setInstId(mapInstInfo.getInstId());
 		packet.setMapId(mapInstInfo.getParentId());
 		LoginServerManager.getInstance().sendToCenter(packet);

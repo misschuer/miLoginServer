@@ -23,7 +23,7 @@ public class LoginObjectManager extends ServerObjectManager  {
 		}
 
 		for (BinlogData obj : result) {
-			if (obj.getGuid() == guid) {
+			if (obj.getGuid().equals(guid)) {
 				return (LoginPlayer)obj;
 			}
 		}

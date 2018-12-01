@@ -38,7 +38,7 @@ import cc.mi.login.loginAction.LoginQueueManager;
 public class LoginServerManager extends ServerManager {
 	static final CustomLogger logger = CustomLogger.getLogger(LoginServerManager.class);
 	
-	private static LoginServerManager instance;
+	private static LoginServerManager instance = new LoginServerManager();
 	
 	// 消息收到以后的回调
 	private static final Map<Integer, Handler> handlers = new HashMap<>();
@@ -70,15 +70,6 @@ public class LoginServerManager extends ServerManager {
 	}
 	
 	public static LoginServerManager getInstance() {
-		if (instance == null) {
-			instance = new LoginServerManager();
-			instance.process = new ServerProcessBlock() {
-				@Override
-				public void run(int diff) {
-					instance.loadServerValue();
-				}
-			};
-		}
 		return instance;
 	}
 	
@@ -102,6 +93,13 @@ public class LoginServerManager extends ServerManager {
 				}
 			}
 		}, 1000, 100, TimeUnit.MILLISECONDS);
+		
+		this.process = new ServerProcessBlock() {
+			@Override
+			public void run(int diff) {
+				instance.loadServerValue();
+			}
+		};
 	}
 	
 	/**

@@ -441,7 +441,7 @@ public class LoginContext extends ServerContext {
 		PlayerLoginMsg packetApp = new PlayerLoginMsg();
 		packetApp.setClientFd(this.getFd());
 		packetApp.setGuid(this.player.getGuid());
-		packetApp.setFD(IdentityConst.SERVER_TYPE_APP);
+		packetApp.setBaseFd(IdentityConst.SERVER_TYPE_APP);
 		LoginServerManager.getInstance().sendToCenter(packetApp);
 	}
 	
@@ -450,7 +450,7 @@ public class LoginContext extends ServerContext {
 		PlayerLogoutMsg packetApp = new PlayerLogoutMsg();
 		packetApp.setClientFd(this.getFd());
 		packetApp.setGuid(this.player.getGuid());
-		packetApp.setFD(IdentityConst.SERVER_TYPE_APP);
+		packetApp.setBaseFd(IdentityConst.SERVER_TYPE_APP);
 		LoginServerManager.getInstance().sendToCenter(packetApp);
 	}
 	

@@ -19,7 +19,7 @@ public class CheckSessionHandler extends HandlerImpl {
 	@Override
 	public void handle(ServerContext nil, Channel channel, Packet decoder) {
 		CheckSession packet = (CheckSession) decoder;
-		int fd = packet.getFD();
+		int fd = packet.getBaseFd();
 		
 		
 		// 解析packet.getSessionkey()
