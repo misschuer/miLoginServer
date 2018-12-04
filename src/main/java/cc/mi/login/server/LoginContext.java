@@ -10,8 +10,8 @@ import cc.mi.core.callback.AbstractCallback;
 import cc.mi.core.constance.IdentityConst;
 import cc.mi.core.constance.ObjectType;
 import cc.mi.core.constance.OperateConst;
-import cc.mi.core.generate.msg.PlayerLoginMsg;
-import cc.mi.core.generate.msg.PlayerLogoutMsg;
+import cc.mi.core.generate.msg.AppPlayerLoginMsg;
+import cc.mi.core.generate.msg.AppPlayerLogoutMsg;
 import cc.mi.core.generate.msg.SendCharInfo;
 import cc.mi.core.generate.stru.CharInfo;
 import cc.mi.core.log.CustomLogger;
@@ -438,7 +438,7 @@ public class LoginContext extends ServerContext {
 //		LoginServerManager.getInstance().sendToCenter(packetCentre);
 		
 		//通知应用服建立连接
-		PlayerLoginMsg packetApp = new PlayerLoginMsg();
+		AppPlayerLoginMsg packetApp = new AppPlayerLoginMsg();
 		packetApp.setClientFd(this.getFd());
 		packetApp.setGuid(this.player.getGuid());
 		packetApp.setBaseFd(IdentityConst.SERVER_TYPE_APP);
@@ -447,7 +447,7 @@ public class LoginContext extends ServerContext {
 	
 	private void noticeOtherInnerServerToDestroyConnection() {
 		//通知应用服断开连接
-		PlayerLogoutMsg packetApp = new PlayerLogoutMsg();
+		AppPlayerLogoutMsg packetApp = new AppPlayerLogoutMsg();
 		packetApp.setClientFd(this.getFd());
 		packetApp.setGuid(this.player.getGuid());
 		packetApp.setBaseFd(IdentityConst.SERVER_TYPE_APP);

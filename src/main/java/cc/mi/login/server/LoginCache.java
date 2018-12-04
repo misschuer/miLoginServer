@@ -50,6 +50,10 @@ public enum LoginCache {
 		return accountHash.get(account);
 	}
 	
+	public boolean isAccountExist(final String account) {
+		return accountHash.containsKey(account);
+	}
+	
 	public CharInfo getCharInfo(final String account) {
 		return charInfoHash.get(account);
 	}
