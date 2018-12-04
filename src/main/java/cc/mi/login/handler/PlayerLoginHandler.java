@@ -11,7 +11,7 @@ import cc.mi.login.server.LoginContext;
 import cc.mi.login.server.LoginServerManager;
 import io.netty.channel.Channel;
 
-public class LoginHandler extends HandlerImpl {
+public class PlayerLoginHandler extends HandlerImpl {
 
 	@Override
 	public void handle(ServerContext nil, Channel channel, Packet decoder) {
