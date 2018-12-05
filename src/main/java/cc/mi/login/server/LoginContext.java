@@ -72,7 +72,7 @@ public class LoginContext extends ServerContext {
 		// 验证通过
 		this.setStatus(SessionStatus.STATUS_AUTHED);
 		
-		Integer oldFd = ContextManager.getSessionFd(this.account);
+		Integer oldFd = ContextManager.INSTANCE.getSessionFd(this.account);
 		//当前已经在线 或者 在session表里面找到成员也认为是已经有角色在线
 		// 顶号的逻辑是先让原来的下掉, 再重新发登录请求
 		if (oldFd != null) {
@@ -81,7 +81,7 @@ public class LoginContext extends ServerContext {
 			this.account = null;
 			
 			//通知已经登录的客户端 下线
-			LoginContext oldContext = (LoginContext) ContextManager.getContext(oldFd);
+			LoginContext oldContext = (LoginContext) ContextManager.INSTANCE.getContext(oldFd);
 			if(oldContext != null) {
 				oldContext.closeSession(OperateConst.OPERATE_CLOSE_REASON_OTHER_LOGINED);
 			}
@@ -111,7 +111,7 @@ public class LoginContext extends ServerContext {
 		});
 		
 		// 记录已经验证的号
-		ContextManager.putSession(account, this.getFd());
+		ContextManager.INSTANCE.putSession(account, this.getFd());
 		// 给客户端发送服务器信息
 		LoginServerManager.getInstance().addWatchAndCall(this.getFd(), ObjectType.GLOBAL_CLIENT_GAME_CONFIG);
 		
@@ -140,14 +140,14 @@ public class LoginContext extends ServerContext {
 		
 		//从账号映射表删除
 		int fd = this.getFd();
-		if (fd > 0 && fd == ContextManager.getSessionFd(account)) {
-			ContextManager.removeSessionFd(account);
+		if (fd > 0 && fd == ContextManager.INSTANCE.getSessionFd(account)) {
+			ContextManager.INSTANCE.removeSessionFd(account);
 		}
 
 		//保存一下登出LOG
 //		SavePlayerLogoutLog();
 		//从app中移除自己
-		ContextManager.removeContext(this.getFd());
+		ContextManager.INSTANCE.removeContext(this.getFd());
 		
 		logger.devLog("player guid={} fd=%u logout. end", this.getGuid(), this.getFd());
 	}
@@ -290,7 +290,7 @@ public class LoginContext extends ServerContext {
 		LoginServerManager.getInstance().putObjects(this.getGuid(), this.tempList, new AbstractCallback<Boolean>() {
 			@Override
 			public void invoke(Boolean value) {
-				LoginContext context = (LoginContext)ContextManager.getContext(fd);
+				LoginContext context = (LoginContext)ContextManager.INSTANCE.getContext(fd);
 				if(!value) {
 					logger.devLog("player login call puts fail {}, fd {}", guid, fd);
 					if(context != null) {
@@ -570,5 +570,11 @@ public class LoginContext extends ServerContext {
 
 	public void setTeleLineNo(int teleLineNo) {
 		this.teleLineNo = teleLineNo;
+	}
+
+	@Override
+	public boolean update(int diff) {
+		
+		return false;
 	}
 }

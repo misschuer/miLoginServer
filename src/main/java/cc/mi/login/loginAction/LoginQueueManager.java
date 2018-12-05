@@ -20,7 +20,7 @@ public class LoginQueueManager extends ContextLoginManager {
 		logger.devLog("LoginQueueManager.PushAction {} {} {}", guid, fd, actionType);
 		LoginContext context = null;
 		if (fd > 0) {
-			context = (LoginContext) ContextManager.getContext(fd);
+			context = (LoginContext) ContextManager.INSTANCE.getContext(fd);
 		} else {
 			context = getOfflineContext(guid);
 		}

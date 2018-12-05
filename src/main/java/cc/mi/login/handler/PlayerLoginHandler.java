@@ -18,7 +18,7 @@ public class PlayerLoginHandler extends HandlerImpl {
 		PlayerLogin packet = (PlayerLogin)decoder;
 		
 		int fd = packet.getBaseFd();
-		LoginContext context = (LoginContext)ContextManager.getContext(fd);
+		LoginContext context = (LoginContext)ContextManager.INSTANCE.getContext(fd);
 		
 		// TODO:判断是否被封号
 		

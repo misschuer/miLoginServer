@@ -118,29 +118,26 @@ public class LoginServerManager extends ServerManager {
 	private void onDataReady() {
 		this.process = new ServerProcessBlock() {
 			@Override
-			public void run(int diff) {
+			public void run(final int diff) {
 				//登录队列
 				loginQueue.update(diff);
 
-				//				//地图管理器心跳
-//				if(MapMgr)
-//					MapMgr->Update(diff);
-//
-//				//所有的player心跳
-//				for (auto it = context_map_.begin();it != context_map_.end();++it)
-//				{
-//					it->second->Update(diff);
-//				}
-//				 
+				//地图管理器心跳
+				LoginMapManager.INSTANCE.update(diff);
+				
+				//所有的player心跳
+				ContextManager.INSTANCE.foreach(new AbstractCallback<ServerContext>() {
+					@Override
+					public void invoke(ServerContext value) {
+						value.update(diff);
+					}
+				});
+				
 //				//是否是异步查询回调
-//				if(m_db_access_mgr)
-//					m_db_access_mgr->UpdateAsync();
-//				
 //				//http服务
-//				if(m_http ) 
-//					m_http->Update();
-//				else
-//					m_http = new HttpHandler;
+				
+				//对象管理器
+//				m_obj_mgr->Update();
 			}
 		};
 		this.playerLoginQueueTimer = new TimerTimestamp(TimestampUtils.now() + 1);
@@ -163,7 +160,7 @@ public class LoginServerManager extends ServerManager {
 	}
 	
 	public int getLoginPlayerCount() {
-		int cnt = ContextManager.getLoginPlayers(new AbstractCallback<ServerContext>() {
+		int cnt = ContextManager.INSTANCE.getLoginPlayers(new AbstractCallback<ServerContext>() {
 			@Override
 			public boolean isMatched(ServerContext obj) {
 				if (obj.getStatus() == SessionStatus.STATUS_TRANSFER || obj.getStatus() == SessionStatus.STATUS_LOGGEDIN) {
@@ -185,7 +182,7 @@ public class LoginServerManager extends ServerManager {
 			// 先计算能正常登录的
 			while (passCount > 0 && !sessionQueue.isEmpty()) {
 				int fd = sessionQueue.poll();
-				LoginContext context = (LoginContext)ContextManager.getContext(fd);
+				LoginContext context = (LoginContext)ContextManager.INSTANCE.getContext(fd);
 				if (context == null) {
 					continue;
 				}
@@ -210,7 +207,7 @@ public class LoginServerManager extends ServerManager {
 			// 需要等待的
 			for (int index = 0; iter.hasNext(); index ++) {
 				int fd = iter.next();
-				ServerContext context = ContextManager.getContext(fd);
+				ServerContext context = ContextManager.INSTANCE.getContext(fd);
 				if (context == null) {
 					iter.remove();
 					index --;

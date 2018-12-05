@@ -22,7 +22,7 @@ public class CreateCharHandler extends HandlerImpl {
 	public void handle(ServerContext nil, Channel channel, Packet decoder) {
 		CreateChar createChar = (CreateChar)decoder;
 		int fd = createChar.getBaseFd();
-		LoginContext context = (LoginContext)ContextManager.getContext(fd);
+		LoginContext context = (LoginContext)ContextManager.INSTANCE.getContext(fd);
 	
 //		//TODO: 参数验证
 //		if (coder.getCharData().getGender() < 1 || coder.getCharData().getGender() > 6) {

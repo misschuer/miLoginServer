@@ -14,7 +14,7 @@ public class DestroyConnectionHandler extends HandlerImpl {
 	@Override
 	public void handle(ServerContext nil, Channel channel, Packet decoder) {
 		DestroyConnection dc = (DestroyConnection)decoder;
-		LoginContext context = (LoginContext) ContextManager.removeContext(dc.getFd());
+		LoginContext context = (LoginContext) ContextManager.INSTANCE.removeContext(dc.getFd());
 		
 		if (context != null) {
 			if (context.getAccount().isEmpty()) {

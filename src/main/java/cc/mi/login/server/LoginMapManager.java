@@ -15,6 +15,7 @@ import cc.mi.core.generate.msg.CreateMap;
 import cc.mi.core.generate.msg.DeleteMap;
 import cc.mi.core.generate.msg.JoinMapMsg;
 import cc.mi.core.generate.msg.PlayerLeaveMap;
+import cc.mi.core.impl.Tick;
 import cc.mi.core.log.CustomLogger;
 import cc.mi.core.manager.MapTemplateManager;
 import cc.mi.core.server.ContextManager;
@@ -25,10 +26,10 @@ import cc.mi.core.xlsxData.MapTemplate;
 import cc.mi.login.table.MapInstInfo;
 import cc.mi.login.table.PlayerInstInfo;
 
-public enum LoginMapManager {
-	INSTANCE;
+public class LoginMapManager implements Tick {
 	
 	static final CustomLogger logger = CustomLogger.getLogger(LoginMapManager.class);
+	public static final LoginMapManager INSTANCE = new LoginMapManager();
 
 	private final int ZHUCHENG_DITU_ID = 1;
 	private final float ZHUCHENG_FUHUO_X = 100;
@@ -50,12 +51,6 @@ public enum LoginMapManager {
 	
 	private LoginMapManager() {}
 	
-	
-//	void MapManager::Update(uint32 diff)
-//	{
-//		//轮询场景服状态，为崩掉的场景服重新传送玩家
-//		UpdateScenedStatus();
-//	}
 
 	public void updateTeleport(LoginContext context) {
 		if(context.getStatus() != SessionStatus.STATUS_LOGGEDIN) {
@@ -743,7 +738,7 @@ public enum LoginMapManager {
 	private void reTelePlayer(LoginPlayer player, int scenedId) {
 		logger.devLog("scened {} coolapse, player {} start tele", scenedId, player.getGuid());
 		int fd = player.getFd();
-		LoginContext context = (LoginContext)ContextManager.getContext(fd);
+		LoginContext context = (LoginContext)ContextManager.INSTANCE.getContext(fd);
 		if (context == null || context.getStatus() != SessionStatus.STATUS_LOGGEDIN) {
 			logger.devLog("scened {} coolapse,but player %s is outline", scenedId, player.getGuid());
 			return;
@@ -814,4 +809,11 @@ public enum LoginMapManager {
 //
 //		return count;
 //	}
+
+
+	@Override
+	public boolean update(int diff) {
+//		UpdateScenedStatus();
+		return false;
+	}
 }

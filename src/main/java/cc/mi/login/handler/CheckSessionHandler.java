@@ -30,7 +30,7 @@ public class CheckSessionHandler extends HandlerImpl {
 		
 		
 		// 判断重复checksession
-		LoginContext loginContext = (LoginContext) ContextManager.getContext(fd);
+		LoginContext loginContext = (LoginContext) ContextManager.INSTANCE.getContext(fd);
 		if (loginContext != null) {
 			logger.warnLog("CheckSessionHandler duplicate for fd = {}", fd);
 			return;
@@ -39,7 +39,7 @@ public class CheckSessionHandler extends HandlerImpl {
 		// 新进来的
 		if (loginContext == null) {
 			loginContext = new LoginContext(fd);
-			ContextManager.pushContext(loginContext);
+			ContextManager.INSTANCE.pushContext(loginContext);
 		}
 		
 		if (loginContext.checkSession(params)) {

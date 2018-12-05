@@ -15,7 +15,7 @@ public class LoginActionLogin extends LoginActionBase {
 	
 	@Override
 	public boolean update(int diff) {
-		LoginContext context = (LoginContext) ContextManager.getContext(this.getFd());
+		LoginContext context = (LoginContext) ContextManager.INSTANCE.getContext(this.getFd());
 		if (context == null) {
 			logger.devLog("LoginActionLogin.Update player not found, {} {} {}", 
 					this.getGuid(), this.getFd(), this.getType());
