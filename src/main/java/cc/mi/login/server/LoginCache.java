@@ -130,7 +130,7 @@ public enum LoginCache {
 	/**
 	 * 玩家自动保存心跳
 	 */
-	public void update() {
+	public void update(LoginPlayer player) {
 		
 	}
 

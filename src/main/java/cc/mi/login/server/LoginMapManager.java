@@ -2,7 +2,6 @@ package cc.mi.login.server;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,6 +19,7 @@ import cc.mi.core.log.CustomLogger;
 import cc.mi.core.manager.MapTemplateManager;
 import cc.mi.core.server.ContextManager;
 import cc.mi.core.server.GuidManager;
+import cc.mi.core.server.ServerConnList;
 import cc.mi.core.server.SessionStatus;
 import cc.mi.core.utils.TimestampUtils;
 import cc.mi.core.xlsxData.MapTemplate;
@@ -35,7 +35,7 @@ public class LoginMapManager implements Tick {
 	private final float ZHUCHENG_FUHUO_X = 100;
 	private final float ZHUCHENG_FUHUO_Y = 100;
 	
-	private int sceneCollapseTime;
+//	private int sceneCollapseTime;
 	private int sceneCnt;
 	
 	private byte teleportCallbackIndex = 0;
@@ -53,14 +53,15 @@ public class LoginMapManager implements Tick {
 	
 
 	public void updateTeleport(LoginContext context) {
+		
 		if(context.getStatus() != SessionStatus.STATUS_LOGGEDIN) {
 			return;
 		}
 
-		//如果等待场景服准备好，还是先等一下吧
-		if (sceneCollapseTime > 0) {
-			return;
-		}
+		//如果等待场景服准备好，还是先等一下吧(TODO:暂时不用)
+//		if (sceneCollapseTime > 0) {
+//			return;
+//		}
 		
 		LoginPlayer player = context.getPlayer();
 		if (player == null) {
@@ -150,6 +151,7 @@ public class LoginMapManager implements Tick {
 		if (scenedConn <= 0) {
 			//TODO: 关闭的type
 			context.closeSession(0);
+//			player->GetSession()->Close(PLAYER_CLOSE_OPERTE_LOGDIN_ONE20,"");
 			return;
 		}
 
@@ -187,9 +189,8 @@ public class LoginMapManager implements Tick {
 //			WorldPacket pkt(INTERNAL_OPT_CLOSE_SCENED);
 //			LogindApp::g_app->SendToScened(pkt, m_scened_conn);
 //			//把这个玩家关掉
-//			if(player->GetSession()){
-//				player->GetSession()->Close(PLAYER_CLOSE_OPERTE_LOGDIN_ONE21,"");
-//			}
+			context.closeSession(0);
+//			player->GetSession()->Close(PLAYER_CLOSE_OPERTE_LOGDIN_ONE21,"");
 			return;
 		}
 		
@@ -234,14 +235,16 @@ public class LoginMapManager implements Tick {
 			//2.ObjectTypeMapPlayerInfo丢失
 			//解决方案是，所有场景服都发一次离开场景服
 			//风险是场景服人数统计会失效，不用修复了
-			List<Integer> sceneList = LoginServerManager.getInstance().getConnList().getSceneConns();
-			for (int sceneFd : sceneList) {
-				PlayerLeaveMap packet = new PlayerLeaveMap();
-				packet.setGuid(context.getGuid());
-				packet.setClientFd(context.getFd());
-				packet.setBaseFd(sceneFd);
-				LoginServerManager.getInstance().sendToCenter(packet);
-			}
+			ServerConnList.INSTANCE.foreach(new AbstractCallback<Integer>() {
+				@Override
+				public void invoke(Integer sceneFd) {
+					PlayerLeaveMap packet = new PlayerLeaveMap();
+					packet.setGuid(context.getGuid());
+					packet.setClientFd(context.getFd());
+					packet.setBaseFd(sceneFd);
+					LoginServerManager.getInstance().sendToCenter(packet);
+				}
+			});
 		}
 		return index;
 	}
@@ -276,7 +279,6 @@ public class LoginMapManager implements Tick {
 		}
 		//创建实例失败
 		context.closeSession(0);
-//			Call_operation_failed(player->GetSession()->m_delegate_sendpkt,OPRATE_TYPE_LOGIN,OPRATE_RESULT_SCENED_CLOSE,"");
 		logger.devLog("player:{} teleport fail! mapid:{},instid:{},lineno:{}", player.getGuid(), mapId, instId, lineNo);
 		return false;
 	}
@@ -522,7 +524,7 @@ public class LoginMapManager implements Tick {
 	}
 	
 	private int getScenedFDByMapID(int mapId) {
-		return LoginServerManager.getInstance().getConnList().getSceneConns().get(0);
+		return ServerConnList.INSTANCE.getSceneConnByMapId(mapId);
 	}
 
 	//关闭某一地图
@@ -689,16 +691,17 @@ public class LoginMapManager implements Tick {
 //		WorldPacket _pkt(*pkt);
 //		LogindApp::g_app->SendToScened(_pkt, fd);
 //	}
-//
-//	//检查场景服状态，为崩溃的场景服玩家重新传送
-//	void MapManager::UpdateScenedStatus()
-//	{
-//		//当前帧场景服数量
-//		DoGetScenedSize(m_scened_size);
-//
-//		//当前没有场景服，那也没有传送的必要了
-//		if(m_scened_size == 0)
-//			return;
+	
+	//检查场景服状态，为崩溃的场景服玩家重新传送
+	private void updateScenedStatus() {
+		//当前帧场景服数量
+		this.sceneCnt = ServerConnList.INSTANCE.getSceneCnt();
+
+		//当前没有场景服，那也没有传送的必要了
+		if(this.sceneCnt == 0) {
+			return;
+		}
+		
 //		//如果是满场景服，看看是不是等待超时了
 //		bool scened_ready = m_scened_size >= g_Config.max_secend_count;
 //		if(!scened_ready)
@@ -732,7 +735,7 @@ public class LoginMapManager implements Tick {
 //				}) == -1)
 //				break;
 //		}
-//	}
+	}
 
 	//重新传送玩家
 	private void reTelePlayer(LoginPlayer player, int scenedId) {
@@ -813,7 +816,7 @@ public class LoginMapManager implements Tick {
 
 	@Override
 	public boolean update(int diff) {
-//		UpdateScenedStatus();
-		return false;
+		this.updateScenedStatus();
+		return true;
 	}
 }

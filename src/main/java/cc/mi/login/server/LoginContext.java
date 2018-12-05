@@ -574,7 +574,12 @@ public class LoginContext extends ServerContext {
 
 	@Override
 	public boolean update(int diff) {
-		
-		return false;
+		// 还没登录
+		if (this.getStatus() != SessionStatus.STATUS_LOGGEDIN) {
+			return false;
+		}
+		LoginMapManager.INSTANCE.updateTeleport(this);
+		LoginCache.INSTANCE.update(this.player);
+		return true;
 	}
 }
