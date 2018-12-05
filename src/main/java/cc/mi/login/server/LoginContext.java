@@ -95,6 +95,7 @@ public class LoginContext extends ServerContext {
 		LoginDB.INSTANCE.modifyAccount(account, platId, serverId, username, isFCM, this.getRemoteIp(), platData, 0);
 
 		// 拉角色列表
+		final int clientFd = this.getFd();
 		LoginDB.INSTANCE.getCharList(account, new AbstractCallback<CharInfo>() {
 			@Override
 			public void invoke(CharInfo obj) {
@@ -103,7 +104,9 @@ public class LoginContext extends ServerContext {
 					chars.add(obj);
 				}
 				SendCharInfo sci = new SendCharInfo();
+				sci.setBaseFd(clientFd);
 				sci.setChars(chars);
+				LoginServerManager.getInstance().sendToGate(sci);
 			}
 		});
 		

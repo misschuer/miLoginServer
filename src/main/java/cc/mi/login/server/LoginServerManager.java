@@ -13,6 +13,7 @@ import cc.mi.core.constance.LoginActionEnum;
 import cc.mi.core.constance.ObjectType;
 import cc.mi.core.constance.OperateConst;
 import cc.mi.core.generate.Opcodes;
+import cc.mi.core.generate.msg.QueuingMsg;
 import cc.mi.core.generate.stru.BinlogInfo;
 import cc.mi.core.log.CustomLogger;
 import cc.mi.core.manager.ServerManager;
@@ -118,10 +119,10 @@ public class LoginServerManager extends ServerManager {
 		this.process = new ServerProcessBlock() {
 			@Override
 			public void run(int diff) {
-//				//登录队列
-//				m_login_queue->Update(diff);
-//
-//				//地图管理器心跳
+				//登录队列
+				loginQueue.update(diff);
+
+				//				//地图管理器心跳
 //				if(MapMgr)
 //					MapMgr->Update(diff);
 //
@@ -155,6 +156,10 @@ public class LoginServerManager extends ServerManager {
 	
 	public void pushSession(int fd) {
 		sessionQueue.add(fd);
+	}
+	
+	public void pushLogout(int fd, String guid) {
+		loginQueue.pushAction(guid, fd, LoginActionEnum.CONTEXT_LOGIN_ACTION_CLOSE);
 	}
 	
 	public int getLoginPlayerCount() {
@@ -211,8 +216,10 @@ public class LoginServerManager extends ServerManager {
 					index --;
 					continue;
 				}
-				System.out.println(index);
-//TODO:	通知客户单当前排第几位			Call_login_queue_index(context->m_delegate_sendpkt, index);
+				QueuingMsg packet = new QueuingMsg();
+				packet.setBaseFd(fd);
+				packet.setIndex(index);
+				LoginServerManager.getInstance().sendToGate(packet);
 			}
 		}
 	}
