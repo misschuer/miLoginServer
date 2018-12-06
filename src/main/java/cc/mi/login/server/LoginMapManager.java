@@ -408,9 +408,10 @@ public class LoginMapManager implements Tick {
 	}
 
 	//根据地图模板的类型的副本类型进行控制
-	int handleGetInstance(LoginPlayer player, MapTemplate mt, int lineNo, int mapId) {
+	public int handleGetInstance(LoginPlayer player, MapTemplate mt, int lineNo, int mapId) {
 		
-		int instType = mt.getBaseInfo().getType(); //副本类型见枚举MapTypeConst
+//		int instType = mt.getBaseInfo().getType(); //副本类型见枚举MapTypeConst TODO: 读表
+		int instType = MapTypeConst.MAP_TYPE_TOWN;
 		int parentMap = mt.getBaseInfo().getParentId();
 
 		//判断一下传送ID
@@ -468,7 +469,8 @@ public class LoginMapManager implements Tick {
 	private int createInstance(int mapId, String ext, int lineNo) {
 		
 		MapTemplate mt = MapTemplateManager.INSTANCE.getTemplate(mapId);
-		int instType = mt.getBaseInfo().getType();
+//		int instType = mt.getBaseInfo().getType(); //副本类型见枚举MapTypeConst TODO: 读表
+		int instType = MapTypeConst.MAP_TYPE_TOWN;
 		int parentId = mt.getBaseInfo().getParentId();
 		
 		int instId = 0;
