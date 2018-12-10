@@ -10,6 +10,7 @@ import cc.mi.core.callback.AbstractCallback;
 import cc.mi.core.constance.InstanceConst;
 import cc.mi.core.constance.MapTypeConst;
 import cc.mi.core.constance.ObjectType;
+import cc.mi.core.gameData.TableMap;
 import cc.mi.core.generate.msg.CreateMap;
 import cc.mi.core.generate.msg.DeleteMap;
 import cc.mi.core.generate.msg.JoinMapMsg;
@@ -409,13 +410,10 @@ public class LoginMapManager implements Tick {
 
 	//根据地图模板的类型的副本类型进行控制
 	public int handleGetInstance(LoginPlayer player, MapTemplate mt, int lineNo, int mapId) {
-		
-//		int instType = mt.getBaseInfo().getType(); //副本类型见枚举MapTypeConst TODO: 读表
-		int instType = MapTypeConst.MAP_TYPE_TOWN;
-		int parentMap = mt.getBaseInfo().getParentId();
+		int parentMapId = mt.getBaseInfo().getParentId();
 
 		//判断一下传送ID
-		boolean needGeneral = this.isNeedGeneral(parentMap);
+		boolean needGeneral = TableMap.INSTANCE.isNeedGeneral(parentMapId);
 		String ext = null;		//如果不需要generalid那就应该传空
 		if (needGeneral) {
 			ext = player.getTeleportExt();
@@ -426,13 +424,8 @@ public class LoginMapManager implements Tick {
 		}
 
 		//找不到就创建
-		int index = findOrCreateMap(mapId, instType, ext, lineNo);
+		int index = findOrCreateMap(mapId, ext, lineNo);
 		return index;
-	}
-	
-	private boolean isNeedGeneral(int mapId) {
-		//TODO:
-		return false;
 	}
 	
 	private void setMapInstanceInfo(int index, MapInstInfo mapInstInfo) {
@@ -447,9 +440,9 @@ public class LoginMapManager implements Tick {
 		return 1;
 	}
 	
-	private int findOrCreateMap(int mapId, int instType, String ext, int lineNo) {
+	private int findOrCreateMap(int mapId, String ext, int lineNo) {
 		
-		if (instType == MapTypeConst.MAP_TYPE_INSTANCE) {
+		if (TableMap.INSTANCE.isInstanceMap(mapId)) {
 			return this.createInstance(mapId, ext, lineNo);
 		}
 		
@@ -458,7 +451,7 @@ public class LoginMapManager implements Tick {
 		
 		//遍历实例查找该地图
 		int index = this.findInstance(mapId, ext, lineNoTrue);
-		logger.devLog("---------FindOrCreateMap {} {} '{}' {} result = {}", mapId, instType, ext, lineNoTrue, index);
+		logger.devLog("---------FindOrCreateMap {}'{}' {} result = {}", mapId, ext, lineNoTrue, index);
 		if (index < 0) {
 			index = this.createInstance(mapId, ext, lineNoTrue);	//如果没有就创建一个新的实例
 		}
