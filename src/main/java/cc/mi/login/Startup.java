@@ -1,5 +1,8 @@
 package cc.mi.login;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import cc.mi.core.log.CustomLogger;
 import cc.mi.core.net.ClientCore;
 import cc.mi.login.config.ServerConfig;
@@ -19,43 +22,58 @@ public class Startup {
 		// 获取玩家名称信息
 		LoginCache.INSTANCE.loadAllCharName();
 		
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				while (true) {
-					try {
-						ClientCore.INSTANCE.start(ServerConfig.getGateIp(), ServerConfig.getGatePort(), new LoginToGateHandler());
-					} catch (Exception e) {
-					} finally {
-						logger.devLog("连接网关服错误,系统将在1秒钟后重新连接");
+		connectGate();
+		connectCenter();
+	}
+	
+	private static void connectGate() {
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		executor.execute(
+			new Runnable() {
+				@Override
+				public void run() {
+					while (true) {
 						try {
-							Thread.sleep(1000);
+							ClientCore.INSTANCE.start(ServerConfig.getGateIp(), ServerConfig.getGatePort(), new LoginToGateHandler());
 						} catch (Exception e) {
-							e.printStackTrace();
+							logger.errorLog(e.getMessage());
+						} finally {
+							logger.errorLog("连接网关服错误,系统将在1秒钟后重新连接");
+							try {
+								Thread.sleep(1000);
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
 						}
 					}
 				}
 			}
-		}, "bootstrap-to-gate").start();
-		
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				while (true) {
-					try {
-						ClientCore.INSTANCE.start(ServerConfig.getCenterIp(), ServerConfig.getCenterPort(), new LoginHandler());
-					} catch (Exception e) {
-					} finally {
-						logger.devLog("连接中心服错误,系统将在1秒钟后重新连接");
+		);
+	}
+	
+	private static void connectCenter() {
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		executor.execute(
+			new Runnable() {
+				@Override
+				public void run() {
+					while (true) {
 						try {
-							Thread.sleep(1000);
+							ClientCore.INSTANCE.start(ServerConfig.getCenterIp(), ServerConfig.getCenterPort(), new LoginHandler());
 						} catch (Exception e) {
-							e.printStackTrace();
+							logger.errorLog(e.getMessage());
+						} finally {
+							logger.errorLog("连接中心服错误,系统将在1秒钟后重新连接");
+							try {
+								Thread.sleep(1000);
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
 						}
 					}
 				}
 			}
-		}, "bootstrap-to-center").start();
+		);
 	}
 
 	public static void main(String[] args) throws NumberFormatException, Exception {

@@ -137,7 +137,7 @@ public class LoginServerManager extends ServerManager {
 //				//http服务
 				
 				//对象管理器
-//				m_obj_mgr->Update();
+				LoginObjectManager.INSTANCE.update(diff);
 			}
 		};
 		this.playerLoginQueueTimer = new TimerTimestamp(TimestampUtils.now() + 1);
