@@ -213,26 +213,11 @@ public enum LoginCache {
 		return null;
 	}
 	
-	// //保存玩家对象
-	// void LogindCache::SavePlayerData(const string &guid)
-	// {
-	// if(!LogindApp::g_app->IsGameServer())
-	// return;
-	// vector<GuidObject*> vec;
-	// ObjMgr.GetDataSetAllObject(guid, vec);
-	// logind_player *player = ObjMgr.FindPlayer(guid);
-	// ASSERT(player);
-	// SavePlayerData(guid, vec, player->GetLevel());
-	// }
-	//
-	// //直接保存数据到硬盘,覆盖文件
-	// bool LogindCache::SaveData(const string &file_name, const string
-	// &content)
-	// {
-	// string file = file_name + BINLOG_EXT_NAME;
-	// return m_storage->SaveFile(file, content);
-	// }
-	//
+	//直接保存数据到硬盘,覆盖文件
+	public boolean saveData(final String fileName, final String content) {
+		return FileUtils.INSTANCE.savePlayerData(ServerConfig.getHddDataPath(), fileName, content);
+	}
+	
 	// //通过玩家guid获取系列化字符串
 	// string LogindCache::GetPlayerDataStr(const string &guid)
 	// {
@@ -250,64 +235,62 @@ public enum LoginCache {
 	// return PlayerDataToString(guid, vec);
 	// }
 	//
-	// //把玩家数据序列化成字符串
-	// string LogindCache::PlayerDataToString(const string &guid,
-	// vector<GuidObject*> &vec)
-	// {
-	// //把主对象放到第一个
-	// for (uint32 i = 0; i < vec.size(); i++)
-	// {
-	// GuidObject *obj = vec[i];
-	// if(obj->guid() == guid)
-	// {
-	// if(i == 0)
-	// break;
-	// vec[i] = vec[0];
-	// vec[0] = obj;
-	// break;
-	// }
-	// }
-	//
-	// stringstream ss;
-	// for (auto o:vec)
-	// {
-	// string ints,strs;
-	// o->ToString(ints,strs);
-	// ss << o->guid() << "\n" << ints << "\n" << strs << "\n";
-	// }
-	// return ss.str();
-	// }
-	//
-	// //保存玩家对象
-	// void LogindCache::SavePlayerData(const string &guid, vector<GuidObject*>
-	// &vec, uint32 level)
-	// {
-	// if(LogindApp::g_app->m_globalvalue && !LogindApp::g_app->IsGameServer())
-	// return;
-	// if(vec.empty())
-	// {
-	// tea_pdebug("LogindCache::SavePlayerData vec is empty %s", guid.c_str());
-	// return;
-	// }
-	// string data = PlayerDataToString(guid, vec);
-	// //开始保存
-	// m_storage->Goto(g_Config.player_data_hdd_path);
-	// SaveData(guid, data);
-	//
-	// static char temp[100];
-	// sprintf(temp, "%s %u\n", guid.c_str(), level);
-	// string guid_str = temp;
-	// //保存备份需求
-	// m_storage->AddContent("backuplist.txt", guid_str);
-	// //每日保存数据到数据库
-	// time_t now = time(NULL);
-	// struct tm *p= localtime(&now);
-	// int today = (1900 + p->tm_year) * 10000 + (p->tm_mon+1) * 100 +
-	// p->tm_mday;
-	// sprintf(temp,"savetodb_%d.txt", today);
-	// m_storage->AddContent(temp, guid_str);
-	// }
-	//
+	
+	//把主对象放到第一个
+	private void changeMainObjectToFirstIfEnabled(String ownerId, List<BinlogData> vec) {
+		
+		if (vec.size() == 0 || vec.get(0).getGuid().equals(ownerId)) {
+			return;
+		}
+		
+		for (int i = 1; i < vec.size(); ++ i) {
+			BinlogData data = vec.get(i);
+			if (data.getGuid().equals(ownerId)) {
+				vec.set(i, vec.get(0));
+				vec.set(0, data);
+				return;
+			}
+		}
+	}
+	
+	//把玩家数据序列化成字符串
+	public String playerDataToString(String ownerId, List<BinlogData> vec) {
+		this.changeMainObjectToFirstIfEnabled(ownerId, vec);
+		String content = "";
+		for (BinlogData data : vec) {
+			content += data.getGuid() + "\n" + data.getIntDataString() + "\n" + data.getStrDataString() + "\n";
+		}
+		return content;
+	}
+	
+	//保存玩家对象
+	public void savePlayerData(final String ownerId) {
+//		if(!LogindApp::g_app->IsGameServer())
+//			return;
+		List<BinlogData> result = new LinkedList<>();
+		LoginObjectManager.INSTANCE.getDataSetAllObject(ownerId, result);
+		LoginPlayer player = LoginObjectManager.INSTANCE.findPlayer(ownerId);
+		this.savePlayerData(ownerId, result, player.getLevel());
+	}
+	
+	//保存玩家对象
+	public void savePlayerData(String ownerId, List<BinlogData> vec, int level) {
+//		if(LogindApp::g_app->m_globalvalue && !LogindApp::g_app->IsGameServer())
+//			return;
+		if (vec.isEmpty()) {
+			return;
+		}
+		String content = this.playerDataToString(ownerId, vec);
+		//开始保存
+		this.saveData(ownerId, content);
+		
+		//保存备份需求
+		String guidStr = ownerId + " " + level;
+		FileUtils.INSTANCE.appendBackup(ServerConfig.getHddDataPath(), guidStr);
+		//每日保存数据到数据库
+		FileUtils.INSTANCE.appendSaveDB(ServerConfig.getHddDataPath(), guidStr);
+	}
+	
 	// //备份玩家数据
 	// void LogindCache::Backup(const string &gm_path/* = ""*/)
 	// {
