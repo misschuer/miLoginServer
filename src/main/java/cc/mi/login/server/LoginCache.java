@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import cc.mi.core.binlog.data.BinlogData;
@@ -87,31 +88,29 @@ public enum LoginCache {
 	// //m_storage->SaveFile(file_name,now_time);
 	// }
 
-	// //释放登出的玩家缓存
-	// void LogindCache::FreeLogoutPlayer(bool immediately)
-	// {
-	// time_t t = time(nullptr);
-	// for (auto it = m_logoutChar.begin(); it != m_logoutChar.end();)
-	// {
-	// if(immediately
-	// || (LogindApp::g_app->IsGameServer() && t > it->second +
-	// GAME_SERVER_SAVE_PLAYER_TIMEOUT)
-	// || (LogindApp::g_app->IsPKServer() && t > it->second +
-	// PK_SERVER_SAVE_PLAYER_TIMEOUT))
-	// {
-	// //保存数据，释放数据
-	// tea_pdebug("LogindCache::FreeLogoutPlayer %s", it->first.c_str());
-	// //只有游戏服才需要保存数据
-	// if(LogindApp::g_app->IsGameServer())
-	// SavePlayerData(it->first);
-	// //释放
-	// ObjMgr.RemovePlayerData(it->first);
-	// it = m_logoutChar.erase(it);
-	// continue;
-	// }
-	// ++it;
-	// }
-	// }
+	//释放登出的玩家缓存
+	public void freeLogoutPlayer(boolean immediately) {
+		
+		int now = TimestampUtils.now();
+		List<String> removeList = new LinkedList<>();
+		for (Entry<String, Integer> info : this.logoutCharHash.entrySet()) {
+			if (immediately || 
+					ServerConfig.isNormalServer() && now > info.getValue() + ServerConfig.NORMAL_SERVER_SAVE_PLAYER_TIMEOUT ||
+					!ServerConfig.isNormalServer() && now > info.getValue() + ServerConfig.KUAFU_SERVER_SAVE_PLAYER_TIMEOUT) {
+				//保存数据，释放数据
+				//只有游戏服才需要保存数据
+				if (!ServerConfig.isNormalServer()) {
+					this.savePlayerData(info.getKey());
+				}
+				LoginObjectManager.INSTANCE.removePlayerData(info.getKey());
+				removeList.add(info.getKey());
+			}
+		}
+		
+		for (String ownerId : removeList) {
+			this.logoutCharHash.remove(ownerId);
+		}
+	 }
 
 	// 添加一个登出缓存玩家
 	public void addLogoutPlayer(final String guid) {

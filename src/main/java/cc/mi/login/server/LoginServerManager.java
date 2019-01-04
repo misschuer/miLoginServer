@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Queue;
 
 import cc.mi.core.binlog.data.BinlogData;
-import cc.mi.core.callback.AbstractCallback;
-import cc.mi.core.callback.Callback;
+import cc.mi.core.callback.InvokeCallback;
+import cc.mi.core.callback.MatchCallback;
 import cc.mi.core.constance.IdentityConst;
 import cc.mi.core.constance.LoginActionEnum;
 import cc.mi.core.constance.ObjectType;
@@ -91,11 +91,11 @@ public class LoginServerManager extends ServerManager {
 		}
 	}
 	
-	public void putObjects(String ownerId, final List<BinlogData> result, AbstractCallback<Boolean> abstractCallback) {
+	public void putObjects(String ownerId, final List<BinlogData> result, InvokeCallback<Boolean> abstractCallback) {
 		LoginObjectManager.INSTANCE.putObjects(this.centerChannel, ownerId, result, abstractCallback);
 	}
 	
-	public void putObject(String ownerId, BinlogData result, Callback<Boolean> callback) {
+	public void putObject(String ownerId, BinlogData result, InvokeCallback<Boolean> callback) {
 		LoginObjectManager.INSTANCE.putObject(this.centerChannel, ownerId, result, callback);
 	}
 	
@@ -126,7 +126,7 @@ public class LoginServerManager extends ServerManager {
 				LoginMapManager.INSTANCE.update(diff);
 				
 				//所有的player心跳
-				ContextManager.INSTANCE.foreach(new AbstractCallback<ServerContext>() {
+				ContextManager.INSTANCE.foreach(new InvokeCallback<ServerContext>() {
 					@Override
 					public void invoke(ServerContext value) {
 						value.update(diff);
@@ -160,7 +160,7 @@ public class LoginServerManager extends ServerManager {
 	}
 	
 	public int getLoginPlayerCount() {
-		int cnt = ContextManager.INSTANCE.getLoginPlayers(new AbstractCallback<ServerContext>() {
+		int cnt = ContextManager.INSTANCE.getLoginPlayers(new MatchCallback<ServerContext>() {
 			@Override
 			public boolean isMatched(ServerContext obj) {
 				if (obj.getStatus() == SessionStatus.STATUS_TRANSFER || obj.getStatus() == SessionStatus.STATUS_LOGGEDIN) {

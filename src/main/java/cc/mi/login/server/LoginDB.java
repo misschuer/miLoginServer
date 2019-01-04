@@ -1,6 +1,6 @@
 package cc.mi.login.server;
 
-import cc.mi.core.callback.Callback;
+import cc.mi.core.callback.InvokeCallback;
 import cc.mi.core.generate.stru.CharInfo;
 import cc.mi.core.log.CustomLogger;
 import cc.mi.login.table.Account;
@@ -93,7 +93,7 @@ public enum LoginDB {
 	}
 	
 	//根据帐号获取角色列表
-	public void getCharList(final String account, Callback<CharInfo> callback) {
+	public void getCharList(final String account, InvokeCallback<CharInfo> callback) {
 		logger.devLog("account {} get char list", account);
 		
 		CharInfo info = LoginCache.INSTANCE.getCharInfo(account);

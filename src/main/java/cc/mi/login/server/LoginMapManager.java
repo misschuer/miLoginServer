@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 import cc.mi.core.algorithm.IndexTree;
-import cc.mi.core.callback.AbstractCallback;
+import cc.mi.core.callback.InvokeCallback;
 import cc.mi.core.constance.InstanceConst;
 import cc.mi.core.constance.MapTypeConst;
 import cc.mi.core.constance.ObjectType;
@@ -236,7 +236,7 @@ public class LoginMapManager implements Tick {
 			//2.ObjectTypeMapPlayerInfo丢失
 			//解决方案是，所有场景服都发一次离开场景服
 			//风险是场景服人数统计会失效，不用修复了
-			ServerConnList.INSTANCE.foreach(new AbstractCallback<Integer>() {
+			ServerConnList.INSTANCE.foreach(new InvokeCallback<Integer>() {
 				@Override
 				public void invoke(Integer sceneFd) {
 					PlayerLeaveMap packet = new PlayerLeaveMap();
@@ -753,7 +753,7 @@ public class LoginMapManager implements Tick {
 		
 		if (set == null) {
 			logger.devLog("clearInstanceAndTelePlayer GetInstancePlayerInfoID");
-			LoginObjectManager.INSTANCE.foreachPlayer(new AbstractCallback<LoginPlayer>() {
+			LoginObjectManager.INSTANCE.foreachPlayer(new InvokeCallback<LoginPlayer>() {
 				@Override
 				public void invoke(LoginPlayer player) {
 					LoginMapManager.INSTANCE.reTelePlayer(player, scenedId);

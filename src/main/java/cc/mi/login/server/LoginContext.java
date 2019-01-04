@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import cc.mi.core.binlog.data.BinlogData;
-import cc.mi.core.callback.AbstractCallback;
+import cc.mi.core.callback.InvokeCallback;
 import cc.mi.core.constance.IdentityConst;
 import cc.mi.core.constance.ObjectType;
 import cc.mi.core.constance.OperateConst;
@@ -96,7 +96,7 @@ public class LoginContext extends ServerContext {
 
 		// 拉角色列表
 		final int clientFd = this.getFd();
-		LoginDB.INSTANCE.getCharList(account, new AbstractCallback<CharInfo>() {
+		LoginDB.INSTANCE.getCharList(account, new InvokeCallback<CharInfo>() {
 			@Override
 			public void invoke(CharInfo obj) {
 				List<CharInfo> chars = new ArrayList<>();
@@ -287,7 +287,7 @@ public class LoginContext extends ServerContext {
 		//向中心服提交玩家对象
 		this.setStatus(SessionStatus.STATUS_PUT);
 		final LoginContext self = this;
-		LoginServerManager.getInstance().putObjects(this.getGuid(), this.tempList, new AbstractCallback<Boolean>() {
+		LoginServerManager.getInstance().putObjects(this.getGuid(), this.tempList, new InvokeCallback<Boolean>() {
 			@Override
 			public void invoke(Boolean value) {
 				LoginContext context = (LoginContext)ContextManager.INSTANCE.getContext(fd);

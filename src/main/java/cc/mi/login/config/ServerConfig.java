@@ -12,6 +12,9 @@ import cc.mi.core.constance.NetConst;
 public class ServerConfig {
 	// 自动存储时间
 	public static final int AUTO_SAVE_TIME = 360;
+	// 内存释放时间
+	public static final int NORMAL_SERVER_SAVE_PLAYER_TIMEOUT = 300;
+	public static final int KUAFU_SERVER_SAVE_PLAYER_TIMEOUT = 10;
 	
 	private static final String ATTRIBUTE = "attribute";
 	private static final String CENTER = "center";
