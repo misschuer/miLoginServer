@@ -17,6 +17,7 @@ import cc.mi.core.constance.ObjectType;
 import cc.mi.core.generate.stru.CharInfo;
 import cc.mi.core.server.GuidManager;
 import cc.mi.core.utils.FileUtils;
+import cc.mi.core.utils.RandomUtils;
 import cc.mi.core.utils.TimestampUtils;
 import cc.mi.login.config.ServerConfig;
 import cc.mi.login.service.CharInfoService;
@@ -85,8 +86,7 @@ public enum LoginCache {
 	// {
 	// //m_storage->SaveFile(file_name,now_time);
 	// }
-	//
-	//
+
 	// //释放登出的玩家缓存
 	// void LogindCache::FreeLogoutPlayer(bool immediately)
 	// {
@@ -131,25 +131,20 @@ public enum LoginCache {
 	 * 玩家自动保存心跳
 	 */
 	public void update(LoginPlayer player) {
+		int now = TimestampUtils.now();
 		
+		// 如果是非普通服(跨服) 或者 对象不存在 或者 还没到时间
+		if (!ServerConfig.isNormalServer() || player == null || player.getAutoSaveTimestamp() > now) {
+			return;
+		}
+		
+		if (player.getAutoSaveTimestamp() > 0) {
+			this.savePlayerData(player.getGuid());
+		}
+		
+		//随机一分钟，让玩家的保存尽量分散
+		player.setAutoSaveTimestamp(now + ServerConfig.AUTO_SAVE_TIME + RandomUtils.randomRange(-60, 60));
 	}
-
-	// //玩家自动保存心跳
-	// void LogindCache::Update(logind_player *player)
-	// {
-	// if(!LogindApp::g_app->IsGameServer())
-	// return;
-	//
-	// if(!player)
-	// return;
-	// time_t t = time(nullptr);
-	// if(player->GetAutoSaveTime() && player->GetAutoSaveTime() > t)
-	// return;
-	// if(player->GetAutoSaveTime() != 0)
-	// SavePlayerData(player->guid());
-	// //随机一分钟，让玩家的保存尽量分散
-	// player->SetAutoSavetime(t + g_Config.auto_save_time + irand(-60,60));
-	// }
 
 	// 读取玩家对象集合
 	public boolean loadDataSet(final String binlogOwner, List<BinlogData> result) {
@@ -265,8 +260,9 @@ public enum LoginCache {
 	
 	//保存玩家对象
 	public void savePlayerData(final String ownerId) {
-//		if(!LogindApp::g_app->IsGameServer())
-//			return;
+		if (!ServerConfig.isNormalServer()) {
+			return;
+		}
 		List<BinlogData> result = new LinkedList<>();
 		LoginObjectManager.INSTANCE.getDataSetAllObject(ownerId, result);
 		LoginPlayer player = LoginObjectManager.INSTANCE.findPlayer(ownerId);
@@ -275,7 +271,10 @@ public enum LoginCache {
 	
 	//保存玩家对象
 	public void savePlayerData(String ownerId, List<BinlogData> vec, int level) {
-//		if(LogindApp::g_app->m_globalvalue && !LogindApp::g_app->IsGameServer())
+		if (!ServerConfig.isNormalServer()) {
+			return;
+		}
+//		if(LogindApp::g_app->m_globalvalue)
 //			return;
 		if (vec.isEmpty()) {
 			return;

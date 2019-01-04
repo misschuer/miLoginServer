@@ -10,6 +10,9 @@ import org.ini4j.Profile.Section;
 import cc.mi.core.constance.NetConst;
 
 public class ServerConfig {
+	// 自动存储时间
+	public static final int AUTO_SAVE_TIME = 360;
+	
 	private static final String ATTRIBUTE = "attribute";
 	private static final String CENTER = "center";
 	private static final String GATE = "gate";
@@ -20,7 +23,7 @@ public class ServerConfig {
 	public static final String WANNENG_LOGIN_KEY = "dc829703a6039ff5262ec2d0d520444a";
 	
 	public static final String MAX_PLAYER_COUNT = "maxPlayerCount";
-	
+	public static final String IS_NORMAL_SERVER = "isNormalServer";
 	
 	private static String loginKey;
 	private static String center_ip;
@@ -30,6 +33,7 @@ public class ServerConfig {
 	private static int gate_port;
 	private static String HDD_DATA_PATH = "";
 	private static boolean checkSessionKeyTime = false;
+	private static boolean normalServer = true;
 	
 	public static void loadConfig() throws NumberFormatException, Exception {
 		Config cfg = new Config();
@@ -45,6 +49,7 @@ public class ServerConfig {
         	checkSessionKeyTime = "TRUE".equals(section.get(CHECK_SESSIONKEY_TIME));
         	HDD_DATA_PATH = section.get(PLAYER_DATA_PATH);
         	maxPlayerCount = Integer.parseInt(section.get(MAX_PLAYER_COUNT));
+        	normalServer = "TRUE".equals(section.get(IS_NORMAL_SERVER));
         	
         	Section section2 = ini.get(CENTER);
         	center_ip = section2.get(NetConst.IP);
@@ -89,5 +94,9 @@ public class ServerConfig {
 
 	public static int getMaxPlayerCount() {
 		return maxPlayerCount;
+	}
+
+	public static boolean isNormalServer() {
+		return normalServer;
 	}
 }

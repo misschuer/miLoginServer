@@ -12,6 +12,8 @@ public class LoginPlayer extends PlayerBase {
 	private static final int BORN_OR	= 2;	//出生朝向
 	private static final int BORN_LV	= 1;	//出生等级
 	
+	private int autoSaveTimestamp = 0;
+	
 	private int fd;
 
 	public LoginPlayer() {
@@ -45,5 +47,13 @@ public class LoginPlayer extends PlayerBase {
 
 	public void setFd(int fd) {
 		this.fd = fd;
+	}
+
+	public int getAutoSaveTimestamp() {
+		return autoSaveTimestamp;
+	}
+
+	public void setAutoSaveTimestamp(int autoSaveTimestamp) {
+		this.autoSaveTimestamp = autoSaveTimestamp;
 	}
 }
