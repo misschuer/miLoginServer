@@ -57,7 +57,7 @@ public class CreateCharHandler extends HandlerImpl {
 		
 ////FIXME:			WriteCreateRole(m_account, new_player->GetGuid(), new_player->GetName().c_str(), m_remote_ip);
 		
-		//这样才会存，不然永远不存
+		//这样才会存，不然永远不存 TODO: 不是hashcode
 		newPlayer.setDbHashCode(newPlayer.hashCode());
 //		//保存新角色
 		CharInfo charInfo = new CharInfo();

@@ -95,8 +95,8 @@ public enum LoginCache {
 		List<String> removeList = new LinkedList<>();
 		for (Entry<String, Integer> info : this.logoutCharHash.entrySet()) {
 			if (immediately || 
-					ServerConfig.isNormalServer() && now > info.getValue() + ServerConfig.NORMAL_SERVER_SAVE_PLAYER_TIMEOUT ||
-					!ServerConfig.isNormalServer() && now > info.getValue() + ServerConfig.KUAFU_SERVER_SAVE_PLAYER_TIMEOUT) {
+					ServerConfig.isNormalServer() && now > info.getValue() + ServerConfig.NORMAL_SERVER_SAVE_PLAYER_INTERVAL ||
+				   !ServerConfig.isNormalServer() && now > info.getValue() + ServerConfig.KUAFU_SERVER_SAVE_PLAYER_INTERVAL) {
 				//保存数据，释放数据
 				//只有游戏服才需要保存数据
 				if (!ServerConfig.isNormalServer()) {
@@ -142,7 +142,7 @@ public enum LoginCache {
 		}
 		
 		//随机一分钟，让玩家的保存尽量分散
-		player.setAutoSaveTimestamp(now + ServerConfig.AUTO_SAVE_TIME + RandomUtils.randomRange(-60, 60));
+		player.setAutoSaveTimestamp(now + ServerConfig.AUTO_SAVE_INTERVAL + RandomUtils.randomRange(-60, 60));
 	}
 
 	// 读取玩家对象集合

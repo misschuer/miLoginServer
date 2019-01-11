@@ -42,6 +42,18 @@ public class LoginServerManager extends ServerManager {
 	
 	// 登录列表定时器
 	private TimerTimestamp playerLoginQueueTimer;
+	// 释放登出的玩家缓存定时器
+	private TimerTimestamp playerFreeLogoutTimer;
+	// 保存全局变量定时器
+	private TimerTimestamp saveGlobalValueTimer;	//360s
+	// 检测合服开始定时器 暂时不用
+//	private TimerTimestamp checkMergeServerTimer;
+	// 玩家备份定时器
+	private TimerTimestamp playerBackupTimer;		//1800s
+	// 保存玩家数据到db定时器
+	private TimerTimestamp savePlayerToDbTimer;		//1s
+	// 记录玩家在线人数定时器
+	private TimerTimestamp onlineCountTimer;		//600s
 	
 	public static LoginServerManager getInstance() {
 		return instance;
@@ -140,14 +152,47 @@ public class LoginServerManager extends ServerManager {
 				LoginObjectManager.INSTANCE.update(diff);
 			}
 		};
-		this.playerLoginQueueTimer = new TimerTimestamp(TimestampUtils.now() + 1);
+		
+		int now = TimestampUtils.now();
+		this.playerLoginQueueTimer = new TimerTimestamp(now + 1);
+		this.playerFreeLogoutTimer = new TimerTimestamp(now + 1);
+		this.saveGlobalValueTimer  = new TimerTimestamp(now + ServerConfig.AUTO_SAVE_INTERVAL);
+		this.playerBackupTimer     = new TimerTimestamp(now + ServerConfig.PLAYER_BACKUP_INTERVAL);
+		this.savePlayerToDbTimer   = new TimerTimestamp(now + 1);
+		this.onlineCountTimer      = new TimerTimestamp(now + ServerConfig.SAVE_ONLINE_COUNT_INTERVAL);
+		
 		this.startReady();
 	}
 	
 	private void checkTimer() {
 		if (this.playerLoginQueueTimer.isSuccess()) {
-			this.playerLoginQueueTimer.doNextAfterSeconds(1);
 			this.dealLoginQueue();
+			this.playerLoginQueueTimer.doNextAfterSeconds(1);
+		}
+		
+		if (this.playerFreeLogoutTimer.isSuccess()) {
+			LoginCache.INSTANCE.freeLogoutPlayer(false);
+			this.playerFreeLogoutTimer.doNextAfterSeconds(1);
+		}
+		
+		if (this.saveGlobalValueTimer.isSuccess()) {
+			// TODO
+			this.saveGlobalValueTimer.doNextAfterSeconds(ServerConfig.AUTO_SAVE_INTERVAL);
+		}
+		
+		if (this.playerBackupTimer.isSuccess()) {
+			// TODO
+			this.playerBackupTimer.doNextAfterSeconds(ServerConfig.PLAYER_BACKUP_INTERVAL);
+		}
+		
+		if (this.savePlayerToDbTimer.isSuccess()) {
+			// TODO
+			this.savePlayerToDbTimer.doNextAfterSeconds(1);
+		}
+		
+		if (this.onlineCountTimer.isSuccess()) {
+			// TODO
+			this.onlineCountTimer.doNextAfterSeconds(ServerConfig.SAVE_ONLINE_COUNT_INTERVAL);
 		}
 	}
 	

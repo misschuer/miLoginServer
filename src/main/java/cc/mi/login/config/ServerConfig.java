@@ -10,11 +10,14 @@ import org.ini4j.Profile.Section;
 import cc.mi.core.constance.NetConst;
 
 public class ServerConfig {
-	// 自动存储时间
-	public static final int AUTO_SAVE_TIME = 360;
-	// 内存释放时间
-	public static final int NORMAL_SERVER_SAVE_PLAYER_TIMEOUT = 300;
-	public static final int KUAFU_SERVER_SAVE_PLAYER_TIMEOUT = 10;
+	// 自动存储间隔
+	public static final int AUTO_SAVE_INTERVAL = 360;
+	public static final int NORMAL_SERVER_SAVE_PLAYER_INTERVAL = 300;
+	public static final int KUAFU_SERVER_SAVE_PLAYER_INTERVAL = 10;
+	// 自动被备份间隔
+	public static final int PLAYER_BACKUP_INTERVAL = 1800;
+	// 统计在线人数间隔
+	public static final int SAVE_ONLINE_COUNT_INTERVAL = 600;
 	
 	private static final String ATTRIBUTE = "attribute";
 	private static final String CENTER = "center";
